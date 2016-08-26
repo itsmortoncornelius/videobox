@@ -28,4 +28,5 @@
 	<string name="successfully_connected">successfully connected</string>
 	<string name="connection_request_title">Connection Request</string>
 	<string name="connection_request_content">Do you want to connect to %s?</string>
+	<string name="content_description_main">main app image</string>
 </resources>

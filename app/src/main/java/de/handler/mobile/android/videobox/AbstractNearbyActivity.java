@@ -64,10 +64,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	@Override
 	public void onConnected(@Nullable Bundle bundle) {
-		InformationHandler.showInfo(
-				R.string.nearby_connection_succeeded,
-				findViewById(android.R.id.content));
-
 		onNearbyConnected();
 	}
 
