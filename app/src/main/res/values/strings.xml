@@ -1,0 +1,23 @@
+<resources>
+	<string name="app_name">Videobox</string>
+
+	<string name="navigation_drawer_open">Open navigation drawer</string>
+	<string name="navigation_drawer_close">Close navigation drawer</string>
+
+	<string name="action_settings">Settings</string>
+	<string name="nav_camera">New Video</string>
+	<string name="nav_gallery">Gallery</string>
+	<string name="nav_settings">Settings</string>
+	<string name="nav_sharing">Sharing</string>
+	<string name="nav_share">Share</string>
+	<string name="nav_send">Send</string>
+	<string name="snackbar_fab_action_title">Pair Device</string>
+	<string name="snackbar_fab_action">Pair</string>
+	<string name="title_activity_pair">PairActivity</string>
+	<string name="section_format">Hello World from section: %1$d</string>
+	<string name="title_fragment_bluetooth_search">Search Devices</string>
+	<string name="title_fragment_bluetooth_pair">Known Devices</string>
+	<string name="nearby_connection_failed">Connection Failed</string>
+	<string name="nearby_connection_succeeded">Connected to Nearby</string>
+	<string name="nearby_service_id">AIzaSyDNwx3TupUR3IZnR-4cftr6L-T1estLbHk</string>
+</resources>
