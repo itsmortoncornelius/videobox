@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -32,6 +33,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private static final int REQUEST_RESOLVE_ERROR = 1001;
 	private static final long TIMEOUT_ADVERTISE = 1000L * 30L;
 	private static final long TIMEOUT_DISCOVER = 1000L * 30L;
+	private static final String KEY_ENDPOINT_ID = "key_endpoint_id" + AbstractNearbyActivity.class.getName();
 
 	protected GoogleApiClient mGoogleApiClient;
 
@@ -39,12 +41,15 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 
 	protected abstract void onNearbyConnected();
+	protected abstract void showCamera();
 
 
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.initNearbyServices();
+		mOtherEndpointId = PreferenceManager.getDefaultSharedPreferences(this)
+				.getString(KEY_ENDPOINT_ID, null);
 	}
 
 	@Override
@@ -92,9 +97,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 									@Override
 									public void onResult(@NonNull Status status) {
 										if (status.isSuccess()) {
-											InformationHandler.showInfo(
-													R.string.successfully_connected,
-													findViewById(android.R.id.content));
+											showInfo(R.string.successfully_connected);
 										} else {
 											if (BuildConfig.DEBUG) {
 												Log.e(AbstractNearbyActivity.class.getName(),
@@ -118,22 +121,28 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	@Override
 	public void onEndpointFound(final String endpointId, String deviceId, String serviceId,
 								final String endpointName) {
+		showInfo(endpointName + " found");
 		this.connectTo(endpointId, endpointName);
 	}
 
 	@Override
 	public void onEndpointLost(String endpointId) {
-
+		showInfo("on Endpoint lost : " + endpointId);
 	}
 
 	@Override
 	public void onMessageReceived(String endpointId, byte[] payload, boolean isReliable) {
+		if (!isReliable) {
+			return;
+		}
 
+		int message = MessageHelper.unmapPayload(payload);
+		this.handleMessage(message);
 	}
 
 	@Override
 	public void onDisconnected(String endpointId) {
-
+		showInfo("on Disconnected from : " + endpointId);
 	}
 
 	@Override
@@ -151,16 +160,14 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			if (BuildConfig.DEBUG) {
 				Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient connection failed");
 			}
-			InformationHandler.showInfo(
-					R.string.error_nearby_connection_failed,
-					findViewById(android.R.id.content));
+			showInfo(R.string.error_nearby_connection_failed);
 		}
 	}
 
 
 	protected void startAdvertising() {
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
-			Log.d(AbstractNearbyActivity.class.getName(), "startAdvertising: not connected to WiFi network.");
+			showInfo(R.string.error_nearby_not_connected_to_wifi);
 			return;
 		}
 
@@ -182,14 +189,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 							// If the user hits 'Advertise' multiple times in the timeout window,
 							// the error will be STATUS_ALREADY_ADVERTISING
 							int statusCode = result.getStatus().getStatusCode();
-							if (statusCode == ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
-								InformationHandler.showInfo(
-										R.string.info_nearby_already_advertising + statusCode,
-										findViewById(android.R.id.content));
-							} else {
-								InformationHandler.showInfo(
-										R.string.error_nearby_connection + statusCode,
-										findViewById(android.R.id.content));
+							if (statusCode != ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
+								showInfo(R.string.error_nearby_connection + statusCode);
 							}
 						}
 					}
@@ -200,6 +201,10 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		Nearby.Connections.stopAdvertising(mGoogleApiClient);
 	}
 
+	protected void stopDiscovery(@NonNull String serviceId) {
+		Nearby.Connections.stopDiscovery(mGoogleApiClient, serviceId);
+	}
+
 	protected void startDiscovery() {
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
 			Log.e(AbstractNearbyActivity.class.getName(), "startDiscovery: not connected to WiFi network.");
@@ -207,7 +212,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		}
 
 		// Discover nearby apps that are advertising with the required service ID.
-		String serviceId = getString(R.string.nearby_service_id);
+		final String serviceId = getString(R.string.nearby_service_id);
 		Nearby.Connections.startDiscovery(mGoogleApiClient, serviceId, TIMEOUT_DISCOVER, this)
 				.setResultCallback(new ResultCallback<Status>() {
 					@Override
@@ -216,28 +221,17 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 							// If the user hits 'Discover' multiple times in the timeout window,
 							// the error will be STATUS_ALREADY_DISCOVERING
 							int statusCode = status.getStatusCode();
-							if (statusCode == ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
-								InformationHandler.showInfo(
-										R.string.info_nearby_already_discovering + statusCode,
-										findViewById(android.R.id.content));
-							} else {
-								InformationHandler.showInfo(
-										R.string.error_nearby_connection + statusCode,
-										findViewById(android.R.id.content));
+							if (statusCode != ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
+								showInfo(R.string.error_nearby_connection + statusCode);
 							}
 						}
 					}
 				});
 	}
 
-	protected void sendMessage() {
-		// Sends a reliable message, which is guaranteed to be delivered eventually and to respect
-		// message ordering from sender to receiver. Nearby.Connections.sendUnreliableMessage
-		// should be used for high-frequency messages where guaranteed delivery is not required, such
-		// as showing one player's cursor location to another. Unreliable messages are often
-		// delivered faster than reliable messages.
-		String msg = "test";
-		Nearby.Connections.sendReliableMessage(mGoogleApiClient, mOtherEndpointId, msg.getBytes());
+	protected void sendMessage(int message) {
+		byte[] toByte = MessageHelper.mapPayload(message);
+		Nearby.Connections.sendReliableMessage(mGoogleApiClient, mOtherEndpointId, toByte);
 	}
 
 	@Override
@@ -268,6 +262,11 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 													 byte[] bytes) {
 						if (status.isSuccess()) {
 							mOtherEndpointId = endpointId;
+							PreferenceManager.getDefaultSharedPreferences(AbstractNearbyActivity.this)
+									.edit()
+									.putString(KEY_ENDPOINT_ID, endpointId)
+									.apply();
+							sendMessage(MessageHelper.CONNECTED);
 						} else if (BuildConfig.DEBUG) {
 							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
 						}
@@ -281,5 +280,14 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				.addConnectionCallbacks(this)
 				.enableAutoManage(this, this)
 				.build();
+	}
+
+	private void handleMessage(int message) {
+		switch (message) {
+			case MessageHelper.CONNECTED:
+				showCamera();
+				break;
+			default:
+		}
 	}
 }

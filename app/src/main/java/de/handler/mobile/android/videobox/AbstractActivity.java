@@ -4,15 +4,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
+import android.support.design.widget.Snackbar;
 import android.support.v4.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
 
 public abstract class AbstractActivity extends AppCompatActivity {
-	protected Toolbar setToolbar(@IdRes int toolbarRes) {
-		Toolbar toolbar = (Toolbar) findViewById(toolbarRes);
-		setSupportActionBar(toolbar);
-		return toolbar;
+	protected View mRootView;
+
+	protected abstract void setRootView();
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		this.setRootView();
 	}
 
 	@SafeVarargs
@@ -23,4 +30,35 @@ public abstract class AbstractActivity extends AppCompatActivity {
 		}
 		super.startActivity(intent);
 	}
+
+	protected Toolbar setToolbar(@IdRes int toolbarRes) {
+		Toolbar toolbar = (Toolbar) findViewById(toolbarRes);
+		setSupportActionBar(toolbar);
+		return toolbar;
+	}
+
+	protected void showInfo(@StringRes int message) {
+		this.showInfo(message, mRootView);
+	}
+
+	protected void showInfo(@NonNull String message) {
+		this.showInfo(message, mRootView);
+	}
+
+	protected void showInfo(@StringRes int message, @NonNull View view) {
+		this.showInfo(message, view, Snackbar.LENGTH_SHORT);
+	}
+
+	protected void showInfo(@NonNull String message, @NonNull View view) {
+		this.showInfo(message, view, Snackbar.LENGTH_SHORT);
+	}
+
+	protected void showInfo(@StringRes int message, @NonNull View view, @DisplayLength int length) {
+		Snackbar.make(view, message, length).show();
+	}
+
+	protected void showInfo(@NonNull String message, @NonNull View view, @DisplayLength int length) {
+		Snackbar.make(view, message, length).show();
+	}
+
 }

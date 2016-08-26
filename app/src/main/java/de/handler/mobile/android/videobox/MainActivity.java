@@ -17,6 +17,12 @@ public class MainActivity extends AbstractNearbyActivity
 		implements NavigationView.OnNavigationItemSelectedListener {
 
 	private DrawerLayout mDrawer;
+	private FloatingActionButton mButton;
+
+	@Override
+	protected void setRootView() {
+		mRootView = mButton;
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -25,8 +31,8 @@ public class MainActivity extends AbstractNearbyActivity
 
 		Toolbar toolbar = setToolbar(R.id.toolbar);
 
-		FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-		fab.setOnClickListener(new View.OnClickListener() {
+		mButton = (FloatingActionButton) findViewById(R.id.fab);
+		mButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				Snackbar.make(view, getString(R.string.snackbar_fab_action_title), Snackbar.LENGTH_LONG)
@@ -83,6 +89,17 @@ public class MainActivity extends AbstractNearbyActivity
 	@Override
 	protected void onNearbyConnected() {
 		startAdvertising();
+	}
+
+	@Override
+	protected void showCamera() {
+		mButton.setImageResource(R.drawable.ic_menu_camera);
+		mButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				showInfo("Camera icon clicked");
+			}
+		});
 	}
 
 	@Override
