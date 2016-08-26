@@ -30,7 +30,7 @@ public class MainActivity extends AbstractNearbyActivity
 						.setAction(getString(R.string.snackbar_fab_action), new View.OnClickListener() {
 							@Override
 							public void onClick(View view) {
-								startActivity(MainActivity.this, PairActivity.class);
+								startDiscovery();
 							}
 						}).show();
 			}

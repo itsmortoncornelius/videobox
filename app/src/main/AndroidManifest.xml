@@ -7,6 +7,7 @@
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
+	<!-- TODO add deep-link -->
 	<application
 		android:allowBackup="true"
 		android:icon="@mipmap/ic_launcher"
@@ -28,17 +29,8 @@
 				<category android:name="android.intent.category.LAUNCHER"/>
 			</intent-filter>
 		</activity>
-		<activity
-			android:name=".PairActivity"
-			android:label="@string/title_activity_pair"
-			android:parentActivityName=".MainActivity"
-			android:theme="@style/AppTheme.NoActionBar">
-			<meta-data
-				android:name="android.support.PARENT_ACTIVITY"
-				android:value="de.handler.mobile.android.videobox.MainActivity"/>
-		</activity>
 
-	<!-- Required for Nearby Connections API -->
+		<!-- Required for Nearby Connections API -->
 	<meta-data android:name="com.google.android.gms.nearby.connection.SERVICE_ID"
 			   android:value="@string/nearby_service_id" />
 

@@ -6,10 +6,8 @@ import android.content.IntentSender;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,11 +32,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private static final int REQUEST_RESOLVE_ERROR = 1001;
 	private static final long TIMEOUT_ADVERTISE = 1000L * 30L;
 	private static final long TIMEOUT_DISCOVER = 1000L * 30L;
-	private static final String MULTICAST_LOCK = "multicast_lock";
 
 	protected GoogleApiClient mGoogleApiClient;
 
-	private AlertDialog mConnectionRequestDialog;
 	private String mOtherEndpointId;
 
 
@@ -68,18 +64,18 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	@Override
 	public void onConnected(@Nullable Bundle bundle) {
-		Snackbar.make(
-				findViewById(android.R.id.content),
-				getString(R.string.nearby_connection_succeeded),
-				Snackbar.LENGTH_LONG)
-				.show();
+		InformationHandler.showInfo(
+				R.string.nearby_connection_succeeded,
+				findViewById(android.R.id.content));
 
 		onNearbyConnected();
 	}
 
 	@Override
 	public void onConnectionSuspended(int cause) {
-		Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient disconnected with cause: " + cause);
+		if (BuildConfig.DEBUG) {
+			Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient disconnected with cause: " + cause);
+		}
 	}
 
 	@Override
@@ -87,11 +83,11 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 									final byte[] payload) {
 		// This device is advertising and has received a connection request. Show a dialog asking
 		// the user if they would like to connect and accept or reject the request accordingly.
-		mConnectionRequestDialog = new AlertDialog.Builder(this)
-				.setTitle("Connection Request")
-				.setMessage("Do you want to connect to " + endpointName + "?")
+		AlertDialog alertDialog = new AlertDialog.Builder(this)
+				.setTitle(R.string.connection_request_title)
+				.setMessage(String.format(getString(R.string.connection_request_content), endpointName))
 				.setCancelable(false)
-				.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
+				.setPositiveButton(getString(R.string.button_connect), new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						Nearby.Connections.acceptConnectionRequest(mGoogleApiClient, endpointId,
@@ -100,31 +96,32 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 									@Override
 									public void onResult(@NonNull Status status) {
 										if (status.isSuccess()) {
-											Toast.makeText(AbstractNearbyActivity.this, "successful connected", Toast.LENGTH_LONG).show();
+											InformationHandler.showInfo(
+													R.string.successfully_connected,
+													findViewById(android.R.id.content));
 										} else {
-											Log.e(AbstractNearbyActivity.class.getName(),
-													"acceptConnectionRequest: FAILURE");
+											if (BuildConfig.DEBUG) {
+												Log.e(AbstractNearbyActivity.class.getName(),
+														"acceptConnectionRequest: FAILURE");
+											}
 										}
 									}
 								});
 					}
 				})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
+				.setNegativeButton(getString(R.string.button_abort), new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						Nearby.Connections.rejectConnectionRequest(mGoogleApiClient, endpointId);
 					}
 				}).create();
 
-		mConnectionRequestDialog.show();
+		alertDialog.show();
 	}
 
 	@Override
 	public void onEndpointFound(final String endpointId, String deviceId, String serviceId,
 								final String endpointName) {
-		Toast.makeText(this,
-				String.format("endpoint found. Endpoint Id: %s, Device Id: %s, Service Id: %s and Endpoint Name: %s",
-						endpointId, deviceId, serviceId, endpointName) , Toast.LENGTH_LONG).show();
 		this.connectTo(endpointId, endpointName);
 	}
 
@@ -149,23 +146,22 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			try {
 				result.startResolutionForResult(AbstractNearbyActivity.this, REQUEST_RESOLVE_ERROR);
 			} catch (IntentSender.SendIntentException e) {
-				Log.e(AbstractNearbyActivity.class.getName(),
-						"GoogleApiClient caused an SendIntentException with message: " + e.getMessage());
+				if (BuildConfig.DEBUG) {
+					Log.e(AbstractNearbyActivity.class.getName(),
+							"GoogleApiClient caused an SendIntentException with message: " + e.getMessage());
+				}
 			}
 		} else {
-			Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient connection failed");
-			Snackbar.make(
-					findViewById(android.R.id.content),
-					getString(R.string.nearby_connection_failed),
-					Snackbar.LENGTH_LONG)
-					.show();
+			if (BuildConfig.DEBUG) {
+				Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient connection failed");
+			}
+			InformationHandler.showInfo(
+					R.string.error_nearby_connection_failed,
+					findViewById(android.R.id.content));
 		}
 	}
 
 
-	/**
-	 * Begin advertising for Nearby Connections, if possible.
-	 */
 	protected void startAdvertising() {
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
 			Log.d(AbstractNearbyActivity.class.getName(), "startAdvertising: not connected to WiFi network.");
@@ -185,18 +181,19 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				mGoogleApiClient, null, appMetadata, TIMEOUT_ADVERTISE, this)
 				.setResultCallback(new ResultCallback<Connections.StartAdvertisingResult>() {
 					@Override
-					public void onResult(Connections.StartAdvertisingResult result) {
-						if (result.getStatus().isSuccess()) {
-							Toast.makeText(AbstractNearbyActivity.this,
-									"advertising as " + result.getLocalEndpointName(), Toast.LENGTH_LONG).show();
-						} else {
+					public void onResult(@NonNull Connections.StartAdvertisingResult result) {
+						if (!result.getStatus().isSuccess()) {
 							// If the user hits 'Advertise' multiple times in the timeout window,
 							// the error will be STATUS_ALREADY_ADVERTISING
 							int statusCode = result.getStatus().getStatusCode();
-							if (statusCode == ConnectionsStatusCodes.STATUS_ALREADY_ADVERTISING) {
-								Toast.makeText(AbstractNearbyActivity.this, "already advertising", Toast.LENGTH_LONG).show();
+							if (statusCode == ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
+								InformationHandler.showInfo(
+										R.string.info_nearby_already_advertising + statusCode,
+										findViewById(android.R.id.content));
 							} else {
-								// TODO
+								InformationHandler.showInfo(
+										R.string.error_nearby_connection + statusCode,
+										findViewById(android.R.id.content));
 							}
 						}
 					}
@@ -207,9 +204,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		Nearby.Connections.stopAdvertising(mGoogleApiClient);
 	}
 
-	/**
-	 * Begin discovering devices advertising Nearby Connections, if possible.
-	 */
 	protected void startDiscovery() {
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
 			Log.e(AbstractNearbyActivity.class.getName(), "startDiscovery: not connected to WiFi network.");
@@ -221,27 +215,25 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		Nearby.Connections.startDiscovery(mGoogleApiClient, serviceId, TIMEOUT_DISCOVER, this)
 				.setResultCallback(new ResultCallback<Status>() {
 					@Override
-					public void onResult(Status status) {
-						if (status.isSuccess()) {
-							Toast.makeText(AbstractNearbyActivity.this, "discovering", Toast.LENGTH_LONG).show();
-						} else {
+					public void onResult(@NonNull Status status) {
+						if (!status.isSuccess()) {
 							// If the user hits 'Discover' multiple times in the timeout window,
 							// the error will be STATUS_ALREADY_DISCOVERING
 							int statusCode = status.getStatusCode();
 							if (statusCode == ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
-								Toast.makeText(AbstractNearbyActivity.this, "already discovering", Toast.LENGTH_LONG).show();
+								InformationHandler.showInfo(
+										R.string.info_nearby_already_discovering + statusCode,
+										findViewById(android.R.id.content));
 							} else {
-								// TODO
+								InformationHandler.showInfo(
+										R.string.error_nearby_connection + statusCode,
+										findViewById(android.R.id.content));
 							}
 						}
 					}
 				});
 	}
 
-	/**
-	 * Send a reliable message to the connected peer. Takes the contents of the EditText and
-	 * sends the message as a byte[].
-	 */
 	protected void sendMessage() {
 		// Sends a reliable message, which is guaranteed to be delivered eventually and to respect
 		// message ordering from sender to receiver. Nearby.Connections.sendUnreliableMessage
@@ -258,8 +250,10 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			if (resultCode == RESULT_OK) {
 				mGoogleApiClient.connect();
 			} else {
-				Log.e(AbstractNearbyActivity.class.getName(),
-						"GoogleApiClient connection failed. Unable to resolve.");
+				if (BuildConfig.DEBUG) {
+					Log.e(AbstractNearbyActivity.class.getName(),
+							"GoogleApiClient connection failed. Unable to resolve.");
+				}
 			}
 		} else {
 			super.onActivityResult(requestCode, resultCode, data);
@@ -267,13 +261,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 
-	/**
-	 * Send a connection request to a given endpoint.
-	 *
-	 * @param endpointId   the endpointId to which you want to connect.
-	 * @param endpointName the name of the endpoint to which you want to connect. Not required to
-	 *                     make the connection, but used to display after success or failure.
-	 */
 	private void connectTo(String endpointId, final String endpointName) {
 		// Send a connection request to a remote endpoint. By passing 'null' for the name,
 		// the Nearby Connections API will construct a default name based on device model
@@ -283,13 +270,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 					@Override
 					public void onConnectionResponse(String endpointId, Status status,
 													 byte[] bytes) {
-						Log.d(AbstractNearbyActivity.class.getName(), "onConnectionResponse:" + endpointId + ":" + status);
 						if (status.isSuccess()) {
-							Toast.makeText(AbstractNearbyActivity.this, "Connected to " + endpointName,
-									Toast.LENGTH_SHORT).show();
-
 							mOtherEndpointId = endpointId;
-						} else {
+						} else if (BuildConfig.DEBUG) {
 							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
 						}
 					}

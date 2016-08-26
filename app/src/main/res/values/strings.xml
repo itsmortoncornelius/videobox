@@ -17,7 +17,15 @@
 	<string name="section_format">Hello World from section: %1$d</string>
 	<string name="title_fragment_bluetooth_search">Search Devices</string>
 	<string name="title_fragment_bluetooth_pair">Known Devices</string>
-	<string name="nearby_connection_failed">Connection Failed</string>
+	<string name="error_nearby_connection_failed">Connection Failed</string>
 	<string name="nearby_connection_succeeded">Connected to Nearby</string>
 	<string name="nearby_service_id">AIzaSyDNwx3TupUR3IZnR-4cftr6L-T1estLbHk</string>
+	<string name="error_nearby_connection">There was an error while connecting to the nearby service. The status code is: </string>
+	<string name="info_nearby_already_discovering">Nearby is already discovering. </string>
+	<string name="info_nearby_already_advertising">Nearby is already advertising. </string>
+	<string name="button_connect">Connect</string>
+	<string name="button_abort">No</string>
+	<string name="successfully_connected">successfully connected</string>
+	<string name="connection_request_title">Connection Request</string>
+	<string name="connection_request_content">Do you want to connect to %s?</string>
 </resources>

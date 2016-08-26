@@ -6,12 +6,12 @@ import android.net.Network;
 import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 
-public class ConnectivityHelper {
+class ConnectivityHelper {
 	private ConnectivityHelper() {
 		// prevent initialization
 	}
 
-	public static boolean isConnectedToNetwork(@NonNull Context context) {
+	static boolean isConnectedToNetwork(@NonNull Context context) {
 		ConnectivityManager connManager =
 				(ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		Network[] networks = connManager.getAllNetworks();
