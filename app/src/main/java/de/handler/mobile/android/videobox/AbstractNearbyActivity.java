@@ -9,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -48,6 +49,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.initNearbyServices();
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
 		mOtherEndpointId = PreferenceManager.getDefaultSharedPreferences(this)
 				.getString(KEY_ENDPOINT_ID, null);
 	}
@@ -69,7 +72,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	@Override
 	public void onConnected(@Nullable Bundle bundle) {
-		onNearbyConnected();
+		this.onNearbyConnected();
 	}
 
 	@Override
@@ -201,8 +204,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		Nearby.Connections.stopAdvertising(mGoogleApiClient);
 	}
 
-	protected void stopDiscovery(@NonNull String serviceId) {
-		Nearby.Connections.stopDiscovery(mGoogleApiClient, serviceId);
+	protected void stopDiscovery() {
+		Nearby.Connections.stopDiscovery(mGoogleApiClient, getString(R.string.nearby_service_id));
 	}
 
 	protected void startDiscovery() {
@@ -286,6 +289,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		switch (message) {
 			case MessageHelper.CONNECTED:
 				showCamera();
+				this.stopAdvertising();
+				this.stopDiscovery();
 				break;
 			default:
 		}

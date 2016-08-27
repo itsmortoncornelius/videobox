@@ -46,11 +46,11 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	}
 
 	protected void showInfo(@StringRes int message, @NonNull View view) {
-		this.showInfo(message, view, Snackbar.LENGTH_SHORT);
+		this.showInfo(message, view, Snackbar.LENGTH_LONG);
 	}
 
 	protected void showInfo(@NonNull String message, @NonNull View view) {
-		this.showInfo(message, view, Snackbar.LENGTH_SHORT);
+		this.showInfo(message, view, Snackbar.LENGTH_LONG);
 	}
 
 	protected void showInfo(@StringRes int message, @NonNull View view, @DisplayLength int length) {
