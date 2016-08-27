@@ -22,4 +22,6 @@
 	<string name="connection_request_title">Connection Request</string>
 	<string name="connection_request_content">Do you want to connect to %s?</string>
 	<string name="error_nearby_not_connected_to_wifi">You have to be connected to the network to enable device recognition</string>
+	<string name="camera">Camera</string>
+	<string name="remote">Remote</string>
 </resources>

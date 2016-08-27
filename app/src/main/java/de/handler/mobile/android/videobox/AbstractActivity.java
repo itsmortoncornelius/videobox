@@ -6,6 +6,8 @@ import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -61,4 +63,11 @@ public abstract class AbstractActivity extends AppCompatActivity {
 		Snackbar.make(view, message, length).show();
 	}
 
+	protected void replaceFragment(@NonNull FragmentManager fragmentManager,
+							  @NonNull Fragment fragment,
+							  @IdRes int container) {
+		fragmentManager.beginTransaction()
+				.replace(container, fragment)
+				.commit();
+	}
 }

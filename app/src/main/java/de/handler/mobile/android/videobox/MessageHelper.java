@@ -1,11 +1,13 @@
 package de.handler.mobile.android.videobox;
 
 final class MessageHelper {
+	static final int SHOW_CAMERA = 0;
+	static final int SHOW_REMOTE = 1;
+
 	private MessageHelper() {
 		// prevent instantiation
 	}
 
-	static final int CONNECTED = 0;
 
 	static byte[] mapPayload(int toConvert) {
 		byte[] ret = new byte[4];

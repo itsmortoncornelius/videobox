@@ -2,7 +2,6 @@ package de.handler.mobile.android.videobox;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
@@ -17,11 +16,10 @@ public class MainActivity extends AbstractNearbyActivity
 		implements NavigationView.OnNavigationItemSelectedListener {
 
 	private DrawerLayout mDrawer;
-	private FloatingActionButton mButton;
 
 	@Override
 	protected void setRootView() {
-		mRootView = mButton;
+		mRootView = findViewById(R.id.fab);
 	}
 
 	@Override
@@ -31,8 +29,8 @@ public class MainActivity extends AbstractNearbyActivity
 
 		Toolbar toolbar = setToolbar(R.id.toolbar);
 
-		mButton = (FloatingActionButton) findViewById(R.id.fab);
-		mButton.setOnClickListener(new View.OnClickListener() {
+		View button = findViewById(R.id.fab);
+		button.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				Snackbar.make(view, getString(R.string.snackbar_fab_action_title), Snackbar.LENGTH_LONG)
@@ -53,6 +51,8 @@ public class MainActivity extends AbstractNearbyActivity
 
 		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 		navigationView.setNavigationItemSelectedListener(this);
+
+		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), R.id.main_container);
 	}
 
 	@Override
@@ -93,14 +93,12 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void showCamera() {
-		// TODO directly open camera
-		mButton.setImageResource(R.drawable.ic_menu_camera);
-		mButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				showInfo("Camera icon clicked");
-			}
-		});
+		replaceFragment(getSupportFragmentManager(), new CameraFragment(), R.id.main_container);
+	}
+
+	@Override
+	protected void showRemote() {
+		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container);
 	}
 
 	@Override
