@@ -93,6 +93,7 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void showCamera() {
+		// TODO directly open camera
 		mButton.setImageResource(R.drawable.ic_menu_camera);
 		mButton.setOnClickListener(new View.OnClickListener() {
 			@Override

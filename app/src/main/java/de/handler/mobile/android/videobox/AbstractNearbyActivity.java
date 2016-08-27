@@ -4,7 +4,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -42,6 +41,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 
 	protected abstract void onNearbyConnected();
+
 	protected abstract void showCamera();
 
 
@@ -50,9 +50,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		super.onCreate(savedInstanceState);
 		this.initNearbyServices();
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-		mOtherEndpointId = PreferenceManager.getDefaultSharedPreferences(this)
-				.getString(KEY_ENDPOINT_ID, null);
 	}
 
 	@Override
@@ -169,6 +166,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 
 	protected void startAdvertising() {
+		Nearby.Connections.stopAllEndpoints(mGoogleApiClient);
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
 			showInfo(R.string.error_nearby_not_connected_to_wifi);
 			return;
@@ -242,11 +240,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		if (requestCode == REQUEST_RESOLVE_ERROR) {
 			if (resultCode == RESULT_OK) {
 				mGoogleApiClient.connect();
-			} else {
-				if (BuildConfig.DEBUG) {
-					Log.e(AbstractNearbyActivity.class.getName(),
-							"GoogleApiClient connection failed. Unable to resolve.");
-				}
+			} else if (BuildConfig.DEBUG) {
+				Log.e(AbstractNearbyActivity.class.getName(),
+						"GoogleApiClient connection failed. Unable to resolve.");
 			}
 		} else {
 			super.onActivityResult(requestCode, resultCode, data);
@@ -265,10 +261,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 													 byte[] bytes) {
 						if (status.isSuccess()) {
 							mOtherEndpointId = endpointId;
-							PreferenceManager.getDefaultSharedPreferences(AbstractNearbyActivity.this)
-									.edit()
-									.putString(KEY_ENDPOINT_ID, endpointId)
-									.apply();
 							sendMessage(MessageHelper.CONNECTED);
 						} else if (BuildConfig.DEBUG) {
 							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
@@ -289,8 +281,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		switch (message) {
 			case MessageHelper.CONNECTED:
 				showCamera();
-				this.stopAdvertising();
-				this.stopDiscovery();
 				break;
 			default:
 		}
