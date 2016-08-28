@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CameraDialogFragment extends DialogFragment {
@@ -24,17 +25,19 @@ public class CameraDialogFragment extends DialogFragment {
 		Bundle args = getArguments();
 		String title = args.getString(TITLE, "");
 		final List<CameraFragment.CameraSpecs> cameraSpecsList = args.getParcelableArrayList(CAMERAS);
-		String[] cameraNames = new String[] {};
+		List<String> cameraNames = new ArrayList<>();
 		if (cameraSpecsList != null) {
 			for (int i = 0; i < cameraSpecsList.size(); i++) {
 				CameraFragment.CameraSpecs cameraSpecs = cameraSpecsList.get(i);
-				cameraNames[i] = cameraSpecs.name;
+				cameraNames.add(cameraSpecs.name);
 			}
 		}
+		String[] cameraNameArray = new String[cameraNames.size()];
+		cameraNames.toArray(cameraNameArray);
 
 		return new AlertDialog.Builder(getActivity())
 				.setTitle(title)
-				.setItems(cameraNames, new DialogInterface.OnClickListener() {
+				.setItems(cameraNameArray, new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
 						if (onResultListener != null) {
 							onResultListener.onResult(
