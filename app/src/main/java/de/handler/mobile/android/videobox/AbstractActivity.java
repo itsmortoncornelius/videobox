@@ -17,8 +17,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.*;
-
 public abstract class AbstractActivity extends AppCompatActivity {
 	private static final int REQUEST_CODE_CAMERA_PERMISSION = 101;
 
@@ -99,18 +97,14 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	}
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode,
+	public void onRequestPermissionsResult(int permissionRequestCode,
 										   @NonNull String permissions[],
 										   @NonNull int[] grantResults) {
-		switch (requestCode) {
-			case REQUEST_CODE_PERMISSION_CAMERA: {
-				if (grantResults.length > 0
-						&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-					this.onPermissionGranted(REQUEST_CODE_CAMERA_PERMISSION, true);
-				} else {
-					this.onPermissionGranted(REQUEST_CODE_CAMERA_PERMISSION, false);
-				}
-			}
+		if (grantResults.length > 0
+				&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			this.onPermissionGranted(permissionRequestCode, true);
+		} else {
+			this.onPermissionGranted(permissionRequestCode, false);
 		}
 	}
 }
