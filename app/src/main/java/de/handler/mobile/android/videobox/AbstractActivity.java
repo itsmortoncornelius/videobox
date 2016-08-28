@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -22,6 +23,8 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	private static final int REQUEST_CODE_CAMERA_PERMISSION = 101;
 
 	protected View mRootView;
+	@IdRes
+	protected int mRootViewId;
 
 	protected abstract void setRootView();
 
@@ -74,9 +77,10 @@ public abstract class AbstractActivity extends AppCompatActivity {
 
 	protected void replaceFragment(@NonNull FragmentManager fragmentManager,
 								   @NonNull Fragment fragment,
-								   @IdRes int container) {
+								   @IdRes int container,
+								   @Nullable String tag) {
 		fragmentManager.beginTransaction()
-				.replace(container, fragment)
+				.replace(container, fragment, tag)
 				.commit();
 	}
 
@@ -89,10 +93,8 @@ public abstract class AbstractActivity extends AppCompatActivity {
 			ActivityCompat.requestPermissions(this,
 					new String[]{permission},
 					permissionRequestCode);
-
-			// MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-			// app-defined int constant. The callback method gets the
-			// result of the request.
+		} else {
+			this.onPermissionGranted(permissionRequestCode, true);
 		}
 	}
 
@@ -109,9 +111,6 @@ public abstract class AbstractActivity extends AppCompatActivity {
 					this.onPermissionGranted(REQUEST_CODE_CAMERA_PERMISSION, false);
 				}
 			}
-
-			// other 'case' lines to check for other
-			// permissions this app might request
 		}
 	}
 }

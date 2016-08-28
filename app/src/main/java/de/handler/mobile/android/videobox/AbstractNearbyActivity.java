@@ -37,9 +37,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	protected GoogleApiClient mGoogleApiClient;
 
-	private String mOtherEndpointId;
-	private boolean mHost;
-
 
 	protected abstract void onNearbyConnected();
 
@@ -100,7 +97,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 									public void onResult(@NonNull Status status) {
 										if (status.isSuccess()) {
 											showInfo(R.string.successfully_connected);
-											sendMessage(MessageHelper.CONNECTED);
+											sendMessage(MessageHelper.CONNECTED, endpointId);
 										} else {
 											if (BuildConfig.DEBUG) {
 												Log.e(AbstractNearbyActivity.class.getName(),
@@ -140,12 +137,13 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		}
 
 		int message = MessageHelper.unmapPayload(payload);
-		this.handleMessage(message);
+		this.handleMessage(message, endpointId);
 	}
 
 	@Override
 	public void onDisconnected(String endpointId) {
 		showInfo("on Disconnected from : " + endpointId);
+		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), mRootViewId, null);
 	}
 
 	@Override
@@ -225,9 +223,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				});
 	}
 
-	protected void sendMessage(int message) {
+	protected void sendMessage(int message, String endpointId) {
 		byte[] toByte = MessageHelper.mapPayload(message);
-		Nearby.Connections.sendReliableMessage(mGoogleApiClient, mOtherEndpointId, toByte);
+		Nearby.Connections.sendReliableMessage(mGoogleApiClient, endpointId, toByte);
 	}
 
 	@Override
@@ -254,9 +252,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 					@Override
 					public void onConnectionResponse(String endpointId, Status status,
 													 byte[] bytes) {
-						if (status.isSuccess()) {
-							mOtherEndpointId = endpointId;
-						} else if (BuildConfig.DEBUG) {
+						if (!status.isSuccess() && BuildConfig.DEBUG) {
 							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
 						}
 					}
@@ -271,16 +267,15 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				.build();
 	}
 
-	private void handleMessage(int message) {
+	private void handleMessage(int message, String endpointId) {
 		switch (message) {
 			case MessageHelper.CONNECTED:
-				mHost = true;
 				showInfo("Devices successfully paired");
-				this.sendMessage(MessageHelper.SHOW_CAMERA);
+				this.sendMessage(MessageHelper.SHOW_CAMERA, endpointId);
 				break;
 			case MessageHelper.SHOW_CAMERA:
 				showCamera();
-				this.sendMessage(MessageHelper.SHOW_REMOTE);
+				this.sendMessage(MessageHelper.SHOW_REMOTE, endpointId);
 				break;
 			case MessageHelper.SHOW_REMOTE:
 				showRemote();

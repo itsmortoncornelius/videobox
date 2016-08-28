@@ -1,5 +1,6 @@
 package de.handler.mobile.android.videobox;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -13,17 +14,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.*;
+import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.REQUEST_CODE_PERMISSION_CAMERA;
 
 public class MainActivity extends AbstractNearbyActivity
 		implements NavigationView.OnNavigationItemSelectedListener {
 
 	private static final int FRAGMENT_CONTAINER = R.id.main_container;
+	private static final String CAMERA_FRAGMENT = "camera_fragment" + MainActivity.class.getCanonicalName();
+	private static final String REMOTE_FRAGMENT = "remote_fragment" + MainActivity.class.getCanonicalName();
+	public static final int REQUEST_CODE_CAMERA_APP = 401;
 	private DrawerLayout mDrawer;
 
 	@Override
 	protected void setRootView() {
 		mRootView = findViewById(R.id.fab);
+		mRootViewId = FRAGMENT_CONTAINER;
 	}
 
 	@Override
@@ -35,7 +40,7 @@ public class MainActivity extends AbstractNearbyActivity
 			}
 
 			Fragment fragment =
-					getSupportFragmentManager().findFragmentById(FRAGMENT_CONTAINER);
+					getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
 			if (fragment instanceof CameraFragment) {
 				((CameraFragment) fragment).onPermissionGranted();
 			}
@@ -72,7 +77,7 @@ public class MainActivity extends AbstractNearbyActivity
 		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 		navigationView.setNavigationItemSelectedListener(this);
 
-		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), FRAGMENT_CONTAINER);
+		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), FRAGMENT_CONTAINER, null);
 	}
 
 	@Override
@@ -113,12 +118,12 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void showCamera() {
-		replaceFragment(getSupportFragmentManager(), new CameraFragment(), R.id.main_container);
+		replaceFragment(getSupportFragmentManager(), new CameraFragment(), R.id.main_container, CAMERA_FRAGMENT);
 	}
 
 	@Override
 	protected void showRemote() {
-		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container);
+		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, REMOTE_FRAGMENT);
 	}
 
 	@Override

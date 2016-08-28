@@ -113,7 +113,7 @@ public class CameraFragment extends Fragment {
 			return;
 		}
 
-		// TODO open cam
+		((AbstractActivity) getActivity()).showInfo("open camera");
 	}
 
 
