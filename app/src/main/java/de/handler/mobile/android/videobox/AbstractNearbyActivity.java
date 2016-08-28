@@ -22,6 +22,7 @@ import com.google.android.gms.nearby.connection.ConnectionsStatusCodes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		GoogleApiClient.ConnectionCallbacks,
@@ -31,18 +32,20 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		Connections.EndpointDiscoveryListener {
 
 	private static final int REQUEST_RESOLVE_ERROR = 1001;
-	private static final long TIMEOUT_ADVERTISE = 1000L * 30L;
-	private static final long TIMEOUT_DISCOVER = 1000L * 30L;
-	private static final String KEY_ENDPOINT_ID = "key_endpoint_id" + AbstractNearbyActivity.class.getName();
+	private static final long TIMEOUT_ADVERTISE = 0L;
+	private static final long TIMEOUT_DISCOVER = TimeUnit.SECONDS.toMillis(30);
 
 	protected GoogleApiClient mGoogleApiClient;
 
 	private String mOtherEndpointId;
+	private boolean mHost;
 
 
 	protected abstract void onNearbyConnected();
 
 	protected abstract void showCamera();
+
+	protected abstract void showRemote();
 
 
 	@Override
@@ -65,7 +68,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			mGoogleApiClient.disconnect();
 		}
 	}
-
 
 	@Override
 	public void onConnected(@Nullable Bundle bundle) {
@@ -98,6 +100,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 									public void onResult(@NonNull Status status) {
 										if (status.isSuccess()) {
 											showInfo(R.string.successfully_connected);
+											sendMessage(MessageHelper.CONNECTED);
 										} else {
 											if (BuildConfig.DEBUG) {
 												Log.e(AbstractNearbyActivity.class.getName(),
@@ -127,7 +130,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	@Override
 	public void onEndpointLost(String endpointId) {
-		showInfo("on Endpoint lost : " + endpointId);
+		showInfo("endpoint lost : " + endpointId);
 	}
 
 	@Override
@@ -198,17 +201,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				});
 	}
 
-	protected void stopAdvertising() {
-		Nearby.Connections.stopAdvertising(mGoogleApiClient);
-	}
-
-	protected void stopDiscovery() {
-		Nearby.Connections.stopDiscovery(mGoogleApiClient, getString(R.string.nearby_service_id));
-	}
-
 	protected void startDiscovery() {
 		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
-			Log.e(AbstractNearbyActivity.class.getName(), "startDiscovery: not connected to WiFi network.");
+			showInfo(R.string.error_nearby_not_connected_to_wifi);
 			return;
 		}
 
@@ -250,7 +245,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 
-	private void connectTo(String endpointId, final String endpointName) {
+	private void connectTo(@NonNull String endpointId, @Nullable final String endpointName) {
 		// Send a connection request to a remote endpoint. By passing 'null' for the name,
 		// the Nearby Connections API will construct a default name based on device model
 		// such as 'LGE Nexus 5'.
@@ -261,7 +256,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 													 byte[] bytes) {
 						if (status.isSuccess()) {
 							mOtherEndpointId = endpointId;
-							sendMessage(MessageHelper.CONNECTED);
 						} else if (BuildConfig.DEBUG) {
 							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
 						}
@@ -280,8 +274,16 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private void handleMessage(int message) {
 		switch (message) {
 			case MessageHelper.CONNECTED:
-				showCamera();
+				mHost = true;
+				showInfo("Devices successfully paired");
+				this.sendMessage(MessageHelper.SHOW_CAMERA);
 				break;
+			case MessageHelper.SHOW_CAMERA:
+				showCamera();
+				this.sendMessage(MessageHelper.SHOW_REMOTE);
+				break;
+			case MessageHelper.SHOW_REMOTE:
+				showRemote();
 			default:
 		}
 	}

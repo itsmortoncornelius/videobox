@@ -3,6 +3,7 @@ package de.handler.mobile.android.videobox;
 final class MessageHelper {
 	static final int SHOW_CAMERA = 0;
 	static final int SHOW_REMOTE = 1;
+	static final int CONNECTED = 2;
 
 	private MessageHelper() {
 		// prevent instantiation

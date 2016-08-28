@@ -2,21 +2,30 @@ package de.handler.mobile.android.videobox;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
+import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.*;
+
 public abstract class AbstractActivity extends AppCompatActivity {
+	private static final int REQUEST_CODE_CAMERA_PERMISSION = 101;
+
 	protected View mRootView;
 
 	protected abstract void setRootView();
+
+	protected abstract void onPermissionGranted(int requestCodePermission, boolean granted);
 
 	@Override
 	protected void onResume() {
@@ -64,10 +73,45 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	}
 
 	protected void replaceFragment(@NonNull FragmentManager fragmentManager,
-							  @NonNull Fragment fragment,
-							  @IdRes int container) {
+								   @NonNull Fragment fragment,
+								   @IdRes int container) {
 		fragmentManager.beginTransaction()
 				.replace(container, fragment)
 				.commit();
+	}
+
+	protected void requestPermission(@NonNull @Permission String permission,
+									 @PermissionRequestCode int permissionRequestCode) {
+		if (ContextCompat.checkSelfPermission(this, permission)
+				!= PackageManager.PERMISSION_GRANTED) {
+
+			// No explanation needed, we can request the permission.
+			ActivityCompat.requestPermissions(this,
+					new String[]{permission},
+					permissionRequestCode);
+
+			// MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+			// app-defined int constant. The callback method gets the
+			// result of the request.
+		}
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode,
+										   @NonNull String permissions[],
+										   @NonNull int[] grantResults) {
+		switch (requestCode) {
+			case REQUEST_CODE_PERMISSION_CAMERA: {
+				if (grantResults.length > 0
+						&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+					this.onPermissionGranted(REQUEST_CODE_CAMERA_PERMISSION, true);
+				} else {
+					this.onPermissionGranted(REQUEST_CODE_CAMERA_PERMISSION, false);
+				}
+			}
+
+			// other 'case' lines to check for other
+			// permissions this app might request
+		}
 	}
 }

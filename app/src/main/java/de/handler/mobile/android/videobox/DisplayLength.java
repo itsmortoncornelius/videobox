@@ -15,5 +15,4 @@ import static android.support.design.widget.Snackbar.LENGTH_SHORT;
 @Target(ElementType.PARAMETER)
 @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})
 @interface DisplayLength {
-	int length() default LENGTH_SHORT;
 }

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -12,14 +13,33 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.*;
+
 public class MainActivity extends AbstractNearbyActivity
 		implements NavigationView.OnNavigationItemSelectedListener {
 
+	private static final int FRAGMENT_CONTAINER = R.id.main_container;
 	private DrawerLayout mDrawer;
 
 	@Override
 	protected void setRootView() {
 		mRootView = findViewById(R.id.fab);
+	}
+
+	@Override
+	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
+		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
+			if (!granted) {
+				showInfo(R.string.error_no_camera_permission);
+				return;
+			}
+
+			Fragment fragment =
+					getSupportFragmentManager().findFragmentById(FRAGMENT_CONTAINER);
+			if (fragment instanceof CameraFragment) {
+				((CameraFragment) fragment).onPermissionGranted();
+			}
+		}
 	}
 
 	@Override
@@ -52,7 +72,7 @@ public class MainActivity extends AbstractNearbyActivity
 		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 		navigationView.setNavigationItemSelectedListener(this);
 
-		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), R.id.main_container);
+		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), FRAGMENT_CONTAINER);
 	}
 
 	@Override
