@@ -36,13 +36,17 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private static final long TIMEOUT_DISCOVER = TimeUnit.SECONDS.toMillis(30);
 
 	protected GoogleApiClient mGoogleApiClient;
-
+	protected String mOtherEndpointId;
 
 	protected abstract void onNearbyConnected();
 
 	protected abstract void showCamera();
 
 	protected abstract void showRemote();
+
+	protected abstract void startRecording();
+
+	protected abstract void stopRecording();
 
 
 	@Override
@@ -224,6 +228,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 	protected void sendMessage(int message, String endpointId) {
+		mOtherEndpointId = endpointId;
 		byte[] toByte = MessageHelper.mapPayload(message);
 		Nearby.Connections.sendReliableMessage(mGoogleApiClient, endpointId, toByte);
 	}
@@ -279,6 +284,13 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				break;
 			case MessageHelper.SHOW_REMOTE:
 				showRemote();
+				break;
+			case MessageHelper.START_VIDEO:
+				startRecording();
+				break;
+			case MessageHelper.STOP_VIDEO:
+				stopRecording();
+				break;
 			default:
 		}
 	}

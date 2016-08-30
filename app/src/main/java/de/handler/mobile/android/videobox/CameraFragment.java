@@ -1,6 +1,5 @@
 package de.handler.mobile.android.videobox;
 
-import android.Manifest;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_EXTERNAL;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
-import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.REQUEST_CODE_PERMISSION_CAMERA;
 
 public class CameraFragment extends Fragment {
 	private static final int REQUEST_CODE_DIALOG_CAMERA = 301;
@@ -38,15 +36,8 @@ public class CameraFragment extends Fragment {
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		((AbstractActivity) getActivity()).requestPermission(
-				Manifest.permission.CAMERA,
-				REQUEST_CODE_PERMISSION_CAMERA);
-	}
-
-	public void onPermissionGranted() {
-		// TODO open camera
 		this.getAvailableCameras();
+		// TODO open camera
 	}
 
 	private void getAvailableCameras() {

@@ -5,14 +5,16 @@ buildscript {
 		jcenter()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:2.2.0-beta3'
+		classpath 'com.android.tools.build:gradle:2.2.0-rc1'
 		// APT Dependency for annotation processing
 		classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+		classpath 'com.github.ben-manes:gradle-versions-plugin:0.13.0'
 	}
 }
 
 ext {
 	supportLibraryVersion = '24.2.0'
+	landscapeCameraVersion = '1.0.7'
 }
 
 allprojects {
@@ -24,3 +26,6 @@ allprojects {
 task clean(type: Delete) {
 	delete rootProject.buildDir
 }
+
+// usage: ./gradlew dependencyUpdates
+apply plugin: 'com.github.ben-manes.versions'

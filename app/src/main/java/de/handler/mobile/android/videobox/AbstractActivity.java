@@ -17,9 +17,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-public abstract class AbstractActivity extends AppCompatActivity {
-	private static final int REQUEST_CODE_CAMERA_PERMISSION = 101;
+import java.util.ArrayList;
+import java.util.List;
 
+public abstract class AbstractActivity extends AppCompatActivity {
 	protected View mRootView;
 	@IdRes
 	protected int mRootViewId;
@@ -96,12 +97,40 @@ public abstract class AbstractActivity extends AppCompatActivity {
 		}
 	}
 
+	protected void requestPermissionz(@NonNull @Permission String[] permissions,
+								   @PermissionRequestCode int permissionRequestCode) {
+		String[] ungrantedPermissions = new String[permissions.length];
+		int counter = 0;
+		for (String permission : permissions) {
+			if (ContextCompat.checkSelfPermission(this, permission)
+					!= PackageManager.PERMISSION_GRANTED) {
+				ungrantedPermissions[counter] = permission;
+				counter++;
+			}
+		}
+		// No explanation needed, we can request the permission.
+		ActivityCompat.requestPermissions(this,
+				permissions,
+				permissionRequestCode);
+
+		if (ungrantedPermissions.length == 0) {
+			this.onPermissionGranted(permissionRequestCode, true);
+		}
+	}
+
+
 	@Override
 	public void onRequestPermissionsResult(int permissionRequestCode,
 										   @NonNull String permissions[],
 										   @NonNull int[] grantResults) {
-		if (grantResults.length > 0
-				&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+		List<String> notGranted = new ArrayList<>();
+		for (int i = 0; i < grantResults.length; i++) {
+			if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+				notGranted.add(permissions[i]);
+			}
+		}
+
+		if (notGranted.size() < 1) {
 			this.onPermissionGranted(permissionRequestCode, true);
 		} else {
 			this.onPermissionGranted(permissionRequestCode, false);

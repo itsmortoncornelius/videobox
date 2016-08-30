@@ -22,7 +22,6 @@
 	<string name="connection_request_title">Connection Request</string>
 	<string name="connection_request_content">Do you want to connect to %s?</string>
 	<string name="error_nearby_not_connected_to_wifi">You have to be connected to the network to enable device recognition</string>
-	<string name="camera">Camera</string>
 	<string name="remote">Remote</string>
 	<string name="error_no_camera_available">The camera cannot be accessed on this device. You should use this is a remote.</string>
 	<string name="error_no_camera_permission">You didn\'t grant the camera permission. You can only use this device as remote.</string>
@@ -30,4 +29,6 @@
 	<string name="camera_back">Back Camera</string>
 	<string name="camera_front">Front Camera</string>
 	<string name="camera_external">External Camera</string>
+
+
 </resources>

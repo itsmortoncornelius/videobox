@@ -1,6 +1,6 @@
 package de.handler.mobile.android.videobox;
 
-import android.content.Intent;
+import android.Manifest;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -22,7 +22,6 @@ public class MainActivity extends AbstractNearbyActivity
 	private static final int FRAGMENT_CONTAINER = R.id.main_container;
 	private static final String CAMERA_FRAGMENT = "camera_fragment" + MainActivity.class.getCanonicalName();
 	private static final String REMOTE_FRAGMENT = "remote_fragment" + MainActivity.class.getCanonicalName();
-	public static final int REQUEST_CODE_CAMERA_APP = 401;
 	private DrawerLayout mDrawer;
 
 	@Override
@@ -34,15 +33,10 @@ public class MainActivity extends AbstractNearbyActivity
 	@Override
 	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
 		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
-			if (!granted) {
+			if (granted) {
+				replaceFragment(getSupportFragmentManager(), new Camera1Fragment(), R.id.main_container, CAMERA_FRAGMENT);
+			} else {
 				showInfo(R.string.error_no_camera_permission);
-				return;
-			}
-
-			Fragment fragment =
-					getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
-			if (fragment instanceof CameraFragment) {
-				((CameraFragment) fragment).onPermissionGranted();
 			}
 		}
 	}
@@ -118,12 +112,38 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void showCamera() {
-		replaceFragment(getSupportFragmentManager(), new CameraFragment(), R.id.main_container, CAMERA_FRAGMENT);
+		findViewById(R.id.fab).setVisibility(View.GONE);
+		requestPermissionz(
+				new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+				REQUEST_CODE_PERMISSION_CAMERA);
 	}
 
 	@Override
 	protected void showRemote() {
+		findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				sendMessage(MessageHelper.START_VIDEO, mOtherEndpointId);
+			}
+		});
 		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, REMOTE_FRAGMENT);
+	}
+
+	@Override
+	protected void startRecording() {
+		Fragment fragment = getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
+		if (fragment instanceof Camera1Fragment) {
+			((Camera1Fragment) fragment).onRecordButtonClicked();
+		}
+	}
+
+	@Override
+	protected void stopRecording() {
+		Fragment fragment = getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
+		if (fragment instanceof Camera1Fragment) {
+			((Camera1Fragment) fragment).onRecordButtonClicked();
+			((Camera1Fragment) fragment).onAcceptButtonClicked();
+		}
 	}
 
 	@Override

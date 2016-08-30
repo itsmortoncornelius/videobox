@@ -10,6 +10,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@StringDef({Manifest.permission.CAMERA})
+@StringDef({Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO})
 @interface Permission {
 }

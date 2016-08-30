@@ -25,4 +25,5 @@ dependencies {
 	compile "com.android.support:support-v4:${supportLibraryVersion}"
 	compile "com.android.support:design:${supportLibraryVersion}"
 	compile 'com.google.android.gms:play-services-nearby:9.4.0'
+	compile "com.github.jmolsmobile:landscapevideocamera:${landscapeCameraVersion}"
 }
