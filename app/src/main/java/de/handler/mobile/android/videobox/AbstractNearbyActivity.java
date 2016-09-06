@@ -1,12 +1,10 @@
 package de.handler.mobile.android.videobox;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.WindowManager;
 
@@ -15,28 +13,40 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
-import com.google.android.gms.nearby.connection.AppIdentifier;
-import com.google.android.gms.nearby.connection.AppMetadata;
-import com.google.android.gms.nearby.connection.Connections;
-import com.google.android.gms.nearby.connection.ConnectionsStatusCodes;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import com.google.android.gms.nearby.messages.Message;
+import com.google.android.gms.nearby.messages.MessageListener;
+import com.google.android.gms.nearby.messages.NearbyMessagesStatusCodes;
+import com.google.android.gms.nearby.messages.PublishCallback;
+import com.google.android.gms.nearby.messages.PublishOptions;
+import com.google.android.gms.nearby.messages.Strategy;
+import com.google.android.gms.nearby.messages.SubscribeCallback;
+import com.google.android.gms.nearby.messages.SubscribeOptions;
 
 public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		GoogleApiClient.ConnectionCallbacks,
-		GoogleApiClient.OnConnectionFailedListener,
-		Connections.ConnectionRequestListener,
-		Connections.MessageListener,
-		Connections.EndpointDiscoveryListener {
+		GoogleApiClient.OnConnectionFailedListener {
 
 	private static final int REQUEST_RESOLVE_ERROR = 1001;
-	private static final long TIMEOUT_ADVERTISE = 0L;
-	private static final long TIMEOUT_DISCOVER = TimeUnit.SECONDS.toMillis(30);
+	private static final int TIMEOUT_PUBLISH = 3 * 60;
+	private static final Strategy PUB_SUB_STRATEGY =
+			new Strategy.Builder().setTtlSeconds(TIMEOUT_PUBLISH).build();
+
+	private final MessageListener mMessageListener = new MessageListener() {
+		@Override
+		public void onFound(final Message message) {
+			handleMessage(MessageHelper.unmapPayload(message.getContent()));
+		}
+
+		@Override
+		public void onLost(final Message message) {
+			// Called when a message is no longer detectable nearby.
+			// Currently not important;
+		}
+	};
 
 	protected GoogleApiClient mGoogleApiClient;
-	protected String mOtherEndpointId;
+	protected Message mMessage;
+
 
 	protected abstract void onNearbyConnected();
 
@@ -67,6 +77,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		super.onStop();
 		if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
 			mGoogleApiClient.disconnect();
+			unpublish();
+			unsubscribe();
 		}
 	}
 
@@ -80,74 +92,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		if (BuildConfig.DEBUG) {
 			Log.e(AbstractNearbyActivity.class.getName(), "GoogleApiClient disconnected with cause: " + cause);
 		}
-	}
-
-	@Override
-	public void onConnectionRequest(final String endpointId, String deviceId, String endpointName,
-									final byte[] payload) {
-		// This device is advertising and has received a connection request. Show a dialog asking
-		// the user if they would like to connect and accept or reject the request accordingly.
-		AlertDialog alertDialog = new AlertDialog.Builder(this)
-				.setTitle(R.string.connection_request_title)
-				.setMessage(String.format(getString(R.string.connection_request_content), endpointName))
-				.setCancelable(false)
-				.setPositiveButton(getString(R.string.button_connect), new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						Nearby.Connections.acceptConnectionRequest(mGoogleApiClient, endpointId,
-								payload, AbstractNearbyActivity.this)
-								.setResultCallback(new ResultCallback<Status>() {
-									@Override
-									public void onResult(@NonNull Status status) {
-										if (status.isSuccess()) {
-											showInfo(R.string.successfully_connected);
-											sendMessage(MessageHelper.CONNECTED, endpointId);
-										} else {
-											if (BuildConfig.DEBUG) {
-												Log.e(AbstractNearbyActivity.class.getName(),
-														"acceptConnectionRequest: FAILURE");
-											}
-										}
-									}
-								});
-					}
-				})
-				.setNegativeButton(getString(R.string.button_abort), new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						Nearby.Connections.rejectConnectionRequest(mGoogleApiClient, endpointId);
-					}
-				}).create();
-
-		alertDialog.show();
-	}
-
-	@Override
-	public void onEndpointFound(final String endpointId, String deviceId, String serviceId,
-								final String endpointName) {
-		showInfo(endpointName + " found");
-		this.connectTo(endpointId, endpointName);
-	}
-
-	@Override
-	public void onEndpointLost(String endpointId) {
-		showInfo("endpoint lost : " + endpointId);
-	}
-
-	@Override
-	public void onMessageReceived(String endpointId, byte[] payload, boolean isReliable) {
-		if (!isReliable) {
-			return;
-		}
-
-		int message = MessageHelper.unmapPayload(payload);
-		this.handleMessage(message, endpointId);
-	}
-
-	@Override
-	public void onDisconnected(String endpointId) {
-		showInfo("on Disconnected from : " + endpointId);
-		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), mRootViewId, null);
 	}
 
 	@Override
@@ -169,70 +113,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		}
 	}
 
-
-	protected void startAdvertising() {
-		Nearby.Connections.stopAllEndpoints(mGoogleApiClient);
-		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
-			showInfo(R.string.error_nearby_not_connected_to_wifi);
-			return;
-		}
-
-		// Advertising with an AppIdentifer lets other devices on the network discover
-		// this application and prompt the user to install the application.
-		List<AppIdentifier> appIdentifierList = new ArrayList<>();
-		appIdentifierList.add(new AppIdentifier(getPackageName()));
-		AppMetadata appMetadata = new AppMetadata(appIdentifierList);
-
-		// Advertise for Nearby Connections. This will broadcast the service id defined in
-		// AndroidManifest.xml. By passing 'null' for the name, the Nearby Connections API
-		// will construct a default name based on device model such as 'LGE Nexus 5'.
-		Nearby.Connections.startAdvertising(
-				mGoogleApiClient, null, appMetadata, TIMEOUT_ADVERTISE, this)
-				.setResultCallback(new ResultCallback<Connections.StartAdvertisingResult>() {
-					@Override
-					public void onResult(@NonNull Connections.StartAdvertisingResult result) {
-						if (!result.getStatus().isSuccess()) {
-							// If the user hits 'Advertise' multiple times in the timeout window,
-							// the error will be STATUS_ALREADY_ADVERTISING
-							int statusCode = result.getStatus().getStatusCode();
-							if (statusCode != ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
-								showInfo(R.string.error_nearby_connection + statusCode);
-							}
-						}
-					}
-				});
-	}
-
-	protected void startDiscovery() {
-		if (!ConnectivityHelper.isConnectedToNetwork(this)) {
-			showInfo(R.string.error_nearby_not_connected_to_wifi);
-			return;
-		}
-
-		// Discover nearby apps that are advertising with the required service ID.
-		final String serviceId = getString(R.string.nearby_service_id);
-		Nearby.Connections.startDiscovery(mGoogleApiClient, serviceId, TIMEOUT_DISCOVER, this)
-				.setResultCallback(new ResultCallback<Status>() {
-					@Override
-					public void onResult(@NonNull Status status) {
-						if (!status.isSuccess()) {
-							// If the user hits 'Discover' multiple times in the timeout window,
-							// the error will be STATUS_ALREADY_DISCOVERING
-							int statusCode = status.getStatusCode();
-							if (statusCode != ConnectionsStatusCodes.STATUS_ALREADY_DISCOVERING) {
-								showInfo(R.string.error_nearby_connection + statusCode);
-							}
-						}
-					}
-				});
-	}
-
-	protected void sendMessage(int message, String endpointId) {
-		mOtherEndpointId = endpointId;
-		byte[] toByte = MessageHelper.mapPayload(message);
-		Nearby.Connections.sendReliableMessage(mGoogleApiClient, endpointId, toByte);
-	}
-
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == REQUEST_RESOLVE_ERROR) {
@@ -248,39 +128,78 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 
-	private void connectTo(@NonNull String endpointId, @Nullable final String endpointName) {
-		// Send a connection request to a remote endpoint. By passing 'null' for the name,
-		// the Nearby Connections API will construct a default name based on device model
-		// such as 'LGE Nexus 5'.
-		Nearby.Connections.sendConnectionRequest(mGoogleApiClient, null, endpointId, null,
-				new Connections.ConnectionResponseCallback() {
-					@Override
-					public void onConnectionResponse(String endpointId, Status status,
-													 byte[] bytes) {
-						if (!status.isSuccess() && BuildConfig.DEBUG) {
-							Log.e(AbstractNearbyActivity.class.getName(), "onConnectionResponse: " + endpointName + " FAILURE");
-						}
-					}
-				}, this);
-	}
-
 	private void initNearbyServices() {
 		mGoogleApiClient = new GoogleApiClient.Builder(this)
-				.addApi(Nearby.CONNECTIONS_API)
+				.addApi(Nearby.MESSAGES_API)
 				.addConnectionCallbacks(this)
 				.enableAutoManage(this, this)
 				.build();
 	}
 
-	private void handleMessage(int message, String endpointId) {
+	protected void subscribe() {
+		SubscribeOptions options = new SubscribeOptions.Builder()
+				.setStrategy(PUB_SUB_STRATEGY)
+				.setCallback(new SubscribeCallback() {
+					@Override
+					public void onExpired() {
+						super.onExpired();
+					}
+				}).build();
+
+		Nearby.Messages.subscribe(mGoogleApiClient, mMessageListener, options)
+				.setResultCallback(new ResultCallback<Status>() {
+					@Override
+					public void onResult(@NonNull Status status) {
+						if (!status.isSuccess()) {
+							showInfo(getString(R.string.error_nearby_publish,
+									NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
+						}
+					}
+				});
+	}
+
+	protected void publish(int message) {
+		PublishOptions options = new PublishOptions.Builder()
+				.setStrategy(PUB_SUB_STRATEGY)
+				.setCallback(new PublishCallback() {
+					@Override
+					public void onExpired() {
+						super.onExpired();
+					}
+				}).build();
+
+		byte[] toByte = MessageHelper.mapPayload(message);
+		mMessage = new Message(toByte);
+
+		Nearby.Messages.publish(mGoogleApiClient, mMessage, options)
+				.setResultCallback(new ResultCallback<Status>() {
+					@Override
+					public void onResult(@NonNull Status status) {
+						if (!status.isSuccess()) {
+							showInfo(getString(R.string.error_nearby_subscribe,
+									NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
+						}
+					}
+				});
+	}
+
+	private void unsubscribe() {
+		Nearby.Messages.unsubscribe(mGoogleApiClient, mMessageListener);
+	}
+
+	private void unpublish() {
+		Nearby.Messages.unpublish(mGoogleApiClient, mMessage);
+	}
+
+	private void handleMessage(int message) {
 		switch (message) {
 			case MessageHelper.CONNECTED:
 				showInfo("Devices successfully paired");
-				this.sendMessage(MessageHelper.SHOW_CAMERA, endpointId);
+				this.publish(MessageHelper.SHOW_CAMERA);
 				break;
 			case MessageHelper.SHOW_CAMERA:
 				showCamera();
-				this.sendMessage(MessageHelper.SHOW_REMOTE, endpointId);
+				this.publish(MessageHelper.SHOW_REMOTE);
 				break;
 			case MessageHelper.SHOW_REMOTE:
 				showRemote();

@@ -2,14 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 		  package="de.handler.mobile.android.videobox">
 
-	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.CAMERA"/>
 	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-feature android:name="android.hardware.camera2.full" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+	<uses-feature android:name="android.hardware.camera2.full"/>
 
 
 	<!-- TODO add deep-link -->
@@ -21,8 +23,8 @@
 		android:theme="@style/AppTheme">
 
 		<meta-data
-		android:name="com.google.android.nearby.messages.API_KEY"
-		android:value="AIzaSyBA1EWhp-bFjW6SLVopfuPL58vILerEXDI" />
+			android:name="com.google.android.nearby.messages.API_KEY"
+			android:value="AIzaSyD4-Cq5pP4pFzBWMXJNIxLoIxzPWYDnKgk"/>
 
 		<activity
 			android:name=".MainActivity"
@@ -34,10 +36,6 @@
 				<category android:name="android.intent.category.LAUNCHER"/>
 			</intent-filter>
 		</activity>
-
-		<!-- Required for Nearby Connections API -->
-	<meta-data android:name="com.google.android.gms.nearby.connection.SERVICE_ID"
-			   android:value="@string/nearby_service_id" />
 
 	</application>
 

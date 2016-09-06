@@ -3,6 +3,7 @@ package de.handler.mobile.android.videobox;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Handler;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -74,13 +75,18 @@ public abstract class AbstractActivity extends AppCompatActivity {
 		Snackbar.make(view, message, length).show();
 	}
 
-	protected void replaceFragment(@NonNull FragmentManager fragmentManager,
-								   @NonNull Fragment fragment,
-								   @IdRes int container,
-								   @Nullable String tag) {
-		fragmentManager.beginTransaction()
-				.replace(container, fragment, tag)
-				.commit();
+	protected void replaceFragment(@NonNull final FragmentManager fragmentManager,
+								   @NonNull final Fragment fragment,
+								   @IdRes final int container,
+								   @Nullable final String tag) {
+		new Handler().post(new Runnable() {
+			@Override
+			public void run() {
+				fragmentManager.beginTransaction()
+						.replace(container, fragment, tag)
+						.commit();
+			}
+		});
 	}
 
 	protected void requestPermission(@NonNull @Permission String permission,

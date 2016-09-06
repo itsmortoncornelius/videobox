@@ -11,8 +11,8 @@
 	<string name="nav_sharing">Sharing</string>
 	<string name="nav_share">Share</string>
 	<string name="nav_send">Send</string>
-	<string name="snackbar_fab_action_title">Pair Device</string>
-	<string name="snackbar_fab_action">Pair</string>
+	<string name="snackbar_fab_action_title">Connect to Camera</string>
+	<string name="snackbar_fab_action">Start</string>
 	<string name="error_nearby_connection_failed">Connection Failed</string>
 	<string name="nearby_service_id">AIzaSyDNwx3TupUR3IZnR-4cftr6L-T1estLbHk</string>
 	<string name="error_nearby_connection">There was an error while connecting to the nearby service. The status code is: </string>
@@ -29,6 +29,8 @@
 	<string name="camera_back">Back Camera</string>
 	<string name="camera_front">Front Camera</string>
 	<string name="camera_external">External Camera</string>
+	<string name="error_nearby_publish">Could not publish message. Status is %s</string>
+	<string name="error_nearby_subscribe">Could not subscribe to message. Status is %s</string>
 
 
 </resources>

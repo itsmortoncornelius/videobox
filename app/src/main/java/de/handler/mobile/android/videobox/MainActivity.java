@@ -1,6 +1,8 @@
 package de.handler.mobile.android.videobox;
 
 import android.Manifest;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -14,15 +16,30 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.jmolsmobile.landscapevideocapture.configuration.CaptureConfiguration;
+import com.jmolsmobile.landscapevideocapture.configuration.PredefinedCaptureConfigurations;
+
+import java.io.File;
+
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.REQUEST_CODE_PERMISSION_CAMERA;
 
 public class MainActivity extends AbstractNearbyActivity
 		implements NavigationView.OnNavigationItemSelectedListener {
 
 	private static final int FRAGMENT_CONTAINER = R.id.main_container;
+	private static final int DURATION_MAX = 30;
+	private static final int MAX_FILE_SIZE = 500;
 	private static final String CAMERA_FRAGMENT = "camera_fragment" + MainActivity.class.getCanonicalName();
 	private static final String REMOTE_FRAGMENT = "remote_fragment" + MainActivity.class.getCanonicalName();
+
+	private final CaptureConfiguration mConfiguration = new CaptureConfiguration(
+					PredefinedCaptureConfigurations.CaptureResolution.RES_2160P,
+					PredefinedCaptureConfigurations.CaptureQuality.HIGH,
+					DURATION_MAX, MAX_FILE_SIZE);;
+
 	private DrawerLayout mDrawer;
+
 
 	@Override
 	protected void setRootView() {
@@ -34,7 +51,15 @@ public class MainActivity extends AbstractNearbyActivity
 	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
 		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
 			if (granted) {
-				replaceFragment(getSupportFragmentManager(), new Camera1Fragment(), R.id.main_container, CAMERA_FRAGMENT);
+				final Intent intent = new Intent(this, CameraActivity.class);
+				final File file = CameraActivity.getOutputMediaFile(this, MEDIA_TYPE_VIDEO);
+				if (file == null) {
+					return;
+				}
+				final Uri fileUri = Uri.fromFile(file); // create a file to save the image
+				intent.putExtra(CameraActivity.EXTRA_CAPTURE_CONFIGURATION, mConfiguration);
+				intent.putExtra(CameraActivity.EXTRA_OUTPUT_FILENAME, fileUri);
+				startActivity(intent);
 			} else {
 				showInfo(R.string.error_no_camera_permission);
 			}
@@ -56,7 +81,7 @@ public class MainActivity extends AbstractNearbyActivity
 						.setAction(getString(R.string.snackbar_fab_action), new View.OnClickListener() {
 							@Override
 							public void onClick(View view) {
-								startDiscovery();
+								publish(MessageHelper.CONNECTED);
 							}
 						}).show();
 			}
@@ -107,7 +132,7 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void onNearbyConnected() {
-		startAdvertising();
+		subscribe();
 	}
 
 	@Override
@@ -123,7 +148,7 @@ public class MainActivity extends AbstractNearbyActivity
 		findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				sendMessage(MessageHelper.START_VIDEO, mOtherEndpointId);
+				publish(MessageHelper.START_VIDEO);
 			}
 		});
 		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, REMOTE_FRAGMENT);

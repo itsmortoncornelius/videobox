@@ -7,14 +7,10 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.jmolsmobile.landscapevideocapture.CLog;
@@ -26,10 +22,18 @@ import com.jmolsmobile.landscapevideocapture.recorder.VideoRecorderInterface;
 import com.jmolsmobile.landscapevideocapture.view.RecordingButtonInterface;
 import com.jmolsmobile.landscapevideocapture.view.VideoCaptureView;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+
 /**
- * A camera fragment.
+ * A camera activity.
  */
-public class Camera1Fragment extends Fragment implements RecordingButtonInterface, VideoRecorderInterface {
+public class CameraActivity extends AbstractNearbyActivity implements RecordingButtonInterface, VideoRecorderInterface {
     public static final int RESULT_ERROR = 753245;
     public static final String EXTRA_OUTPUT_FILENAME = "com.jmolsmobile.extraoutputfilename";
     public static final String EXTRA_CAPTURE_CONFIGURATION = "com.jmolsmobile.extracaptureconfiguration";
@@ -44,7 +48,6 @@ public class Camera1Fragment extends Fragment implements RecordingButtonInterfac
     private CaptureConfiguration mCaptureConfiguration;
     private VideoCaptureView mVideoCaptureView;
     private VideoRecorder mVideoRecorder;
-    private OnVideoListener mOnVideoListener;
     private BroadcastReceiver mToggleMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, final Intent intent) {
@@ -69,108 +72,184 @@ public class Camera1Fragment extends Fragment implements RecordingButtonInterfac
     };
 
 
-    interface OnVideoListener {
-        void onVideo(@Nullable String videoPath);
-        void onError(@NonNull String message);
+    public static File getOutputMediaFile(@NonNull final Context context, final int type){
+        // To be safe, you should check that the SDCard is mounted
+        // using Environment.getExternalStorageState() before doing this.
+
+        final File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), context.getString(R.string.app_name));
+        // This location works best if you want the created images to be shared
+        // between applications and persist after your app has been uninstalled.
+
+        // Create the storage directory if it does not exist
+        if (! mediaStorageDir.exists()){
+            if (!mediaStorageDir.mkdirs()){
+                Log.d(context.getString(R.string.app_name), "failed to create directory");
+                return null;
+            }
+        }
+
+        // Create a media file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        File mediaFile;
+        if (type == MEDIA_TYPE_IMAGE){
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".jpg");
+        } else if (type == MEDIA_TYPE_VIDEO) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator + "VID_"+ timeStamp + ".mp4");
+        } else {
+            return null;
+        }
+
+        return mediaFile;
     }
 
 
-	@Nullable
-	@Override
-	public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		View view = inflater.inflate(com.jmolsmobile.landscapevideocapture.R.layout.activity_videocapture, container, false);
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        CLog.toggleLogging(this);
+        this.requestWindowFeature(1);
+        this.getWindow().setFlags(1024, 1024);
+        this.setContentView(com.jmolsmobile.landscapevideocapture.R.layout.activity_videocapture);
+        this.initializeCaptureConfiguration(savedInstanceState);
+        this.mVideoCaptureView = (VideoCaptureView)this.findViewById(com.jmolsmobile.landscapevideocapture.R.id.videocapture_videocaptureview_vcv);
+        if (this.mVideoCaptureView != null) {
+            this.initializeRecordingUI();
+        }
 
-		mVideoCaptureView = (VideoCaptureView) view.findViewById(com.jmolsmobile.landscapevideocapture.R.id.videocapture_videocaptureview_vcv);
-		if (this.mVideoCaptureView != null) {
-			this.initializeRecordingUI();
-		}
-		this.initializeCaptureConfiguration(savedInstanceState);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mToggleMessageReceiver, new IntentFilter(TOGGLE_CAMERA_EVENT));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mSaveVideoMessageReceiver, new IntentFilter(SAVE_VIDEO_EVENT));
+    }
 
-		return view;
-	}
-
-	@Override
-	public void onResume() {
-		super.onResume();
-
-		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mToggleMessageReceiver, new IntentFilter(TOGGLE_CAMERA_EVENT));
-		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mSaveVideoMessageReceiver, new IntentFilter(SAVE_VIDEO_EVENT));
-	}
-
-	@Override
-    public void onPause() {
+    @Override
+    protected void onPause() {
         if (this.mVideoRecorder != null) {
             this.mVideoRecorder.stopRecording(null);
         }
 
         this.releaseAllResources();
 
-		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mToggleMessageReceiver);
-		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mSaveVideoMessageReceiver);
-
+        // Unregister since the activity is about to be closed.
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mToggleMessageReceiver);
         super.onPause();
     }
 
-
-	@Override
+    @Override
     public void onSaveInstanceState(@NonNull final Bundle savedInstanceState) {
         savedInstanceState.putBoolean("com.jmolsmobile.savedrecordedboolean", this.mVideoRecorded);
         savedInstanceState.putString("com.jmolsmobile.savedoutputfilename", this.mVideoFile.getFullPath());
         super.onSaveInstanceState(savedInstanceState);
     }
 
-	@Override
+
+    @Override
+    public void onBackPressed() {
+        this.finishCancelled();
+    }
+
+    @Override
     public void onRecordButtonClicked() {
         this.mVideoRecorder.toggleRecording();
     }
 
-	@Override
+    @Override
     public void onAcceptButtonClicked() {
         this.finishCompleted();
     }
 
-	@Override
+    @Override
     public void onDeclineButtonClicked() {
         this.finishCancelled();
     }
 
-	@Override
+    @Override
     public void onRecordingStarted() {
         this.mVideoCaptureView.updateUIRecordingOngoing();
     }
 
-	@Override
+    @Override
     public void onRecordingStopped(String message) {
         if (message != null) {
-            Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
 
         this.mVideoCaptureView.updateUIRecordingFinished(this.getVideoThumbnail());
         this.releaseAllResources();
     }
 
-	@Override
+    @Override
     public void onRecordingSuccess() {
         this.mVideoRecorded = true;
     }
 
-	@Override
+    @Override
     public void onRecordingFailed(String message) {
         this.finishError(message);
     }
 
-
-    public void setOnVideoListener(@NonNull OnVideoListener onVideoListener) {
-        mOnVideoListener = onVideoListener;
-    }
-
     public Bitmap getVideoThumbnail() {
         Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(this.mVideoFile.getFullPath(), 2);
-        if (thumbnail == null) {
+        if(thumbnail == null) {
             CLog.d("VideoCapture_Activity", "Failed to generate video preview");
         }
 
         return thumbnail;
+    }
+
+
+    @Override
+    protected void onNearbyConnected() {
+
+    }
+
+    @Override
+    protected void showCamera() {
+
+    }
+
+    @Override
+    protected void showRemote() {
+
+    }
+
+    @Override
+    protected void startRecording() {
+
+    }
+
+    @Override
+    protected void stopRecording() {
+
+    }
+
+    @Override
+    protected void setRootView() {
+
+    }
+
+    @Override
+    protected void onPermissionGranted(int requestCodePermission, boolean granted) {
+
+    }
+
+    protected CaptureConfiguration generateCaptureConfiguration() {
+        CaptureConfiguration returnConfiguration = this.getIntent().getParcelableExtra("com.jmolsmobile.extracaptureconfiguration");
+        if(returnConfiguration == null) {
+            returnConfiguration = new CaptureConfiguration();
+            CLog.d("VideoCapture_Activity", "No captureconfiguration passed - using default configuration");
+        }
+
+        return returnConfiguration;
+    }
+
+    protected VideoFile generateOutputFile(final Bundle savedInstanceState) {
+        VideoFile returnFile;
+        if(savedInstanceState != null) {
+            returnFile = new VideoFile(savedInstanceState.getString("com.jmolsmobile.savedoutputfilename"));
+        } else {
+            returnFile = new VideoFile(this.getIntent().getStringExtra("com.jmolsmobile.extraoutputfilename"));
+        }
+
+        return returnFile;
     }
 
 
@@ -191,45 +270,32 @@ public class Camera1Fragment extends Fragment implements RecordingButtonInterfac
     }
 
     private void finishCompleted() {
-        mOnVideoListener.onVideo(this.mVideoFile.getFullPath());
+        Intent result = new Intent();
+        result.putExtra("com.jmolsmobile.extraoutputfilename", this.mVideoFile.getFullPath());
+        this.setResult(-1, result);
+        this.finish();
     }
 
     private void finishCancelled() {
-		mOnVideoListener.onVideo(null);
+        this.setResult(0);
+        this.finish();
     }
 
     private void finishError(String message) {
-		mOnVideoListener.onError(message);
+        Toast.makeText(this.getApplicationContext(), "Can\'t capture video: " + message, Toast.LENGTH_SHORT).show();
+        Intent result = new Intent();
+        result.putExtra("com.jmolsmobile.extraerrormessage", message);
+        this.setResult(RESULT_ERROR, result);
+        this.finish();
     }
 
     private void releaseAllResources() {
-        if (this.mVideoRecorder != null) {
+        if(this.mVideoRecorder != null) {
             this.mVideoRecorder.releaseAllResources();
         }
     }
 
-    protected CaptureConfiguration generateCaptureConfiguration() {
-        CaptureConfiguration returnConfiguration = getActivity().getIntent().getParcelableExtra("com.jmolsmobile.extracaptureconfiguration");
-        if (returnConfiguration == null) {
-            returnConfiguration = new CaptureConfiguration();
-            CLog.d("VideoCapture_Activity", "No captureconfiguration passed - using default configuration");
-        }
-
-        return returnConfiguration;
-    }
-
     private boolean generateVideoRecorded(final Bundle savedInstanceState) {
         return savedInstanceState != null && savedInstanceState.getBoolean("com.jmolsmobile.savedrecordedboolean", false);
-    }
-
-    protected VideoFile generateOutputFile(final Bundle savedInstanceState) {
-        VideoFile returnFile;
-        if (savedInstanceState != null) {
-            returnFile = new VideoFile(savedInstanceState.getString("com.jmolsmobile.savedoutputfilename"));
-        } else {
-            returnFile = new VideoFile(getActivity().getIntent().getStringExtra("com.jmolsmobile.extraoutputfilename"));
-        }
-
-        return returnFile;
     }
 }
