@@ -76,7 +76,7 @@ public class CameraActivity extends AbstractNearbyActivity implements RecordingB
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
 
-        final File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), context.getString(R.string.app_name));
+        final File mediaStorageDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_MOVIES), context.getString(R.string.app_name));
         // This location works best if you want the created images to be shared
         // between applications and persist after your app has been uninstalled.
 

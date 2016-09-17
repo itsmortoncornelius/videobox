@@ -195,14 +195,14 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		switch (message) {
 			case MessageHelper.CONNECTED:
 				showInfo("Devices successfully paired");
-				this.publish(MessageHelper.SHOW_CAMERA);
+				this.publish(MessageHelper.SHOW_REMOTE);
 				break;
 			case MessageHelper.SHOW_CAMERA:
 				showCamera();
-				this.publish(MessageHelper.SHOW_REMOTE);
 				break;
 			case MessageHelper.SHOW_REMOTE:
 				showRemote();
+				this.publish(MessageHelper.SHOW_CAMERA);
 				break;
 			case MessageHelper.START_VIDEO:
 				startRecording();

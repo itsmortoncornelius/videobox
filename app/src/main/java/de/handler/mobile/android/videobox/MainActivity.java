@@ -56,7 +56,7 @@ public class MainActivity extends AbstractNearbyActivity
 				if (file == null) {
 					return;
 				}
-				final Uri fileUri = Uri.fromFile(file); // create a file to save the image
+				final Uri fileUri = Uri.fromFile(file);
 				intent.putExtra(CameraActivity.EXTRA_CAPTURE_CONFIGURATION, mConfiguration);
 				intent.putExtra(CameraActivity.EXTRA_OUTPUT_FILENAME, fileUri);
 				startActivity(intent);
@@ -157,18 +157,11 @@ public class MainActivity extends AbstractNearbyActivity
 	@Override
 	protected void startRecording() {
 		Fragment fragment = getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
-		if (fragment instanceof Camera1Fragment) {
-			((Camera1Fragment) fragment).onRecordButtonClicked();
-		}
 	}
 
 	@Override
 	protected void stopRecording() {
 		Fragment fragment = getSupportFragmentManager().findFragmentByTag(CAMERA_FRAGMENT);
-		if (fragment instanceof Camera1Fragment) {
-			((Camera1Fragment) fragment).onRecordButtonClicked();
-			((Camera1Fragment) fragment).onAcceptButtonClicked();
-		}
 	}
 
 	@Override
