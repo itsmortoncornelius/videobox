@@ -5,25 +5,66 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_EXTERNAL;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
 public class CameraFragment extends Fragment {
 	private static final int REQUEST_CODE_DIALOG_CAMERA = 301;
 
 	private View mFrameLayout;
+
+
+	public static File getOutputMediaFile(@NonNull final Context context, final int type){
+		// To be safe, you should check that the SDCard is mounted
+		// using Environment.getExternalStorageState() before doing this.
+
+		final File mediaStorageDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_MOVIES), context.getString(R.string.app_name));
+		// This location works best if you want the created images to be shared
+		// between applications and persist after your app has been uninstalled.
+
+		// Create the storage directory if it does not exist
+		if (! mediaStorageDir.exists()){
+			if (!mediaStorageDir.mkdirs()){
+				Log.d(context.getString(R.string.app_name), "failed to create directory");
+				return null;
+			}
+		}
+
+		// Create a media file name
+		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+		File mediaFile;
+		if (type == MEDIA_TYPE_IMAGE){
+			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".jpg");
+		} else if (type == MEDIA_TYPE_VIDEO) {
+			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "VID_"+ timeStamp + ".mp4");
+		} else {
+			return null;
+		}
+
+		return mediaFile;
+	}
+
 
 	@Nullable
 	@Override
@@ -37,7 +78,6 @@ public class CameraFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.getAvailableCameras();
-		// TODO open camera
 	}
 
 	private void getAvailableCameras() {
@@ -46,25 +86,23 @@ public class CameraFragment extends Fragment {
 		try {
 			final String[] cameraIds = cameraManager.getCameraIdList();
 			if (cameraIds.length > 1) {
-				this.showCameraChoseDialog(cameraIds, cameraManager, new CameraDialogFragment.OnResultListener() {
+				this.showCameraChoseDialog(this.getCameraSpecs(cameraIds, cameraManager), new CameraDialogFragment.OnResultListener() {
 					@Override
-					public void onResult(@Nullable String cameraId) {
-						openCamera(cameraId);
+					public void onResult(@Nullable CameraSpecs cameraSpecs) {
+						openCamera(cameraSpecs);
 					}
 				});
 			} else if (cameraIds.length > 0) {
-				this.openCamera(cameraIds[0]);
+				CameraSpecs cameraSpecs = this.getCameraSpecs(cameraIds, cameraManager).get(0);
+				this.openCamera(cameraSpecs);
 			}
 		} catch (CameraAccessException e) {
 			((AbstractActivity) getActivity()).showInfo(R.string.error_no_camera_available);
 		}
 	}
 
-	private void showCameraChoseDialog(@NonNull String[] cameraIds,
-									   @NonNull CameraManager cameraManager,
-									   @NonNull CameraDialogFragment.OnResultListener onResultListener) throws CameraAccessException {
-
-		ArrayList<CameraSpecs> specsList = new ArrayList<>(cameraIds.length);
+	private List<CameraSpecs> getCameraSpecs(String[] cameraIds, CameraManager cameraManager) throws CameraAccessException {
+		List<CameraSpecs> specsList = new ArrayList<>(cameraIds.length);
 		for (String cameraId : cameraIds) {
 			CameraCharacteristics cameraCharacteristics =
 					cameraManager.getCameraCharacteristics(cameraId);
@@ -75,16 +113,21 @@ public class CameraFragment extends Fragment {
 				specsList.add(new CameraSpecs(cameraId, name, lensFacing));
 			}
 		}
+		return specsList;
+	}
+
+	private void showCameraChoseDialog(@NonNull List<CameraSpecs> specsList,
+									   @NonNull CameraDialogFragment.OnResultListener onResultListener) throws CameraAccessException {
 
 		CameraDialogFragment dialog = new CameraDialogFragment();
 		dialog.setOnResultListener(onResultListener);
 
 		Bundle args = new Bundle();
 		args.putString(CameraDialogFragment.TITLE, getString(R.string.camera_chooser_dialog_title));
-		args.putParcelableArrayList(CameraDialogFragment.CAMERAS, specsList);
+		args.putParcelableArrayList(CameraDialogFragment.CAMERAS, new ArrayList<Parcelable>(specsList));
 
 		dialog.setArguments(args);
-		dialog.show(getFragmentManager(), "tag");
+		dialog.show(getFragmentManager(), CameraDialogFragment.class.getCanonicalName());
 	}
 
 	private String createName(int lensFacing) {
@@ -99,8 +142,8 @@ public class CameraFragment extends Fragment {
 		return null;
 	}
 
-	private void openCamera(@Nullable String cameraId) {
-		if (cameraId == null) {
+	private void openCamera(@Nullable CameraSpecs cameraSpecs) {
+		if (cameraSpecs == null) {
 			return;
 		}
 

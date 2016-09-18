@@ -17,7 +17,7 @@ public class CameraDialogFragment extends DialogFragment {
 	private OnResultListener onResultListener;
 
 	interface OnResultListener {
-		void onResult(@Nullable String cameraId);
+		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs);
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class CameraDialogFragment extends DialogFragment {
 						if (onResultListener != null) {
 							onResultListener.onResult(
 									cameraSpecsList != null ?
-											cameraSpecsList.get(which).cameraId
+											cameraSpecsList.get(which)
 											: null);
 						}
 					}
