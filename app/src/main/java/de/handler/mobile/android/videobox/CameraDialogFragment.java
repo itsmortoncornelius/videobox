@@ -2,6 +2,7 @@ package de.handler.mobile.android.videobox;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.hardware.camera2.CameraAccessException;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -17,7 +18,7 @@ public class CameraDialogFragment extends DialogFragment {
 	private OnResultListener onResultListener;
 
 	interface OnResultListener {
-		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs);
+		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs) throws CameraAccessException;
 	}
 
 	@Override
@@ -40,10 +41,14 @@ public class CameraDialogFragment extends DialogFragment {
 				.setItems(cameraNameArray, new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
 						if (onResultListener != null) {
-							onResultListener.onResult(
-									cameraSpecsList != null ?
-											cameraSpecsList.get(which)
-											: null);
+							try {
+								onResultListener.onResult(
+										cameraSpecsList != null ?
+												cameraSpecsList.get(which)
+												: null);
+							} catch (CameraAccessException e) {
+								((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
+							}
 						}
 					}
 				}).create();

@@ -1,18 +1,25 @@
 package de.handler.mobile.android.videobox;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -30,12 +37,11 @@ import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
 public class CameraFragment extends Fragment {
-	private static final int REQUEST_CODE_DIALOG_CAMERA = 301;
+	private CameraView mCameraView;
+	private boolean mHasMoreCameras = false;
 
-	private View mFrameLayout;
 
-
-	public static File getOutputMediaFile(@NonNull final Context context, final int type){
+	public static File getOutputMediaFile(@NonNull final Context context, final int type) {
 		// To be safe, you should check that the SDCard is mounted
 		// using Environment.getExternalStorageState() before doing this.
 
@@ -44,8 +50,8 @@ public class CameraFragment extends Fragment {
 		// between applications and persist after your app has been uninstalled.
 
 		// Create the storage directory if it does not exist
-		if (! mediaStorageDir.exists()){
-			if (!mediaStorageDir.mkdirs()){
+		if (!mediaStorageDir.exists()) {
+			if (!mediaStorageDir.mkdirs()) {
 				Log.d(context.getString(R.string.app_name), "failed to create directory");
 				return null;
 			}
@@ -54,10 +60,10 @@ public class CameraFragment extends Fragment {
 		// Create a media file name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
 		File mediaFile;
-		if (type == MEDIA_TYPE_IMAGE){
-			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".jpg");
+		if (type == MEDIA_TYPE_IMAGE) {
+			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
 		} else if (type == MEDIA_TYPE_VIDEO) {
-			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "VID_"+ timeStamp + ".mp4");
+			mediaFile = new File(mediaStorageDir.getPath() + File.separator + "VID_" + timeStamp + ".mp4");
 		} else {
 			return null;
 		}
@@ -70,7 +76,7 @@ public class CameraFragment extends Fragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_camera, container, false);
-		mFrameLayout = view.findViewById(R.id.fragment_camera_container);
+		mCameraView = (CameraView) view.findViewById(R.id.fragment_camera_view);
 		return view;
 	}
 
@@ -81,23 +87,28 @@ public class CameraFragment extends Fragment {
 	}
 
 	private void getAvailableCameras() {
-		CameraManager cameraManager =
+		final CameraManager cameraManager =
 				(CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
 		try {
 			final String[] cameraIds = cameraManager.getCameraIdList();
 			if (cameraIds.length > 1) {
+				mHasMoreCameras = true;
 				this.showCameraChoseDialog(this.getCameraSpecs(cameraIds, cameraManager), new CameraDialogFragment.OnResultListener() {
 					@Override
-					public void onResult(@Nullable CameraSpecs cameraSpecs) {
-						openCamera(cameraSpecs);
+					public void onResult(@Nullable CameraSpecs cameraSpecs) throws CameraAccessException {
+						openCamera(cameraSpecs, cameraManager);
 					}
 				});
 			} else if (cameraIds.length > 0) {
+				mHasMoreCameras = false;
 				CameraSpecs cameraSpecs = this.getCameraSpecs(cameraIds, cameraManager).get(0);
-				this.openCamera(cameraSpecs);
+				this.openCamera(cameraSpecs, cameraManager);
 			}
 		} catch (CameraAccessException e) {
-			((AbstractActivity) getActivity()).showInfo(R.string.error_no_camera_available);
+			((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
+			if (mHasMoreCameras) {
+				this.getAvailableCameras();
+			}
 		}
 	}
 
@@ -142,12 +153,71 @@ public class CameraFragment extends Fragment {
 		return null;
 	}
 
-	private void openCamera(@Nullable CameraSpecs cameraSpecs) {
+	private void openCamera(@Nullable CameraSpecs cameraSpecs, @NonNull final CameraManager cameraManager) throws CameraAccessException {
 		if (cameraSpecs == null) {
 			return;
 		}
 
 		((AbstractActivity) getActivity()).showInfo("open camera");
+		if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+			return;
+		}
+
+		cameraManager.openCamera(cameraSpecs.cameraId, new CameraDevice.StateCallback() {
+			@Override
+			public void onOpened(@NonNull CameraDevice camera) {
+				try {
+					createCameraSession(camera);
+				} catch (CameraAccessException e) {
+					((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
+				}
+			}
+
+			@Override
+			public void onDisconnected(@NonNull CameraDevice camera) {
+				// Another application has requested the camera
+				((AbstractActivity) getActivity()).showInfo(R.string.error_camera_disconnected);
+			}
+
+			@Override
+			public void onError(@NonNull CameraDevice camera, int error) {
+				AbstractActivity activity = ((AbstractActivity) getActivity());
+				switch (error) {
+					case ERROR_CAMERA_IN_USE:
+						activity.showInfo(R.string.error_camera_in_use);
+						break;
+					case ERROR_MAX_CAMERAS_IN_USE:
+						activity.showInfo(R.string.error_camera_max_in_use);
+						break;
+					case ERROR_CAMERA_DISABLED:
+						activity.showInfo(R.string.error_camera_disabled);
+						break;
+					case ERROR_CAMERA_DEVICE:
+						activity.showInfo(R.string.error_camera_fatal);
+						break;
+					case ERROR_CAMERA_SERVICE:
+						activity.showInfo(R.string.error_camera_service);
+						break;
+				}
+			}
+		}, new Handler());
+	}
+
+	private void createCameraSession(@NonNull CameraDevice camera) throws CameraAccessException {
+		List<Surface> surfaceViews = new ArrayList<>(1);
+
+		// TODO: continue here and before that in CameraView
+		camera.createCaptureSession(surfaceViews, new CameraCaptureSession.StateCallback() {
+			@Override
+			public void onConfigured(@NonNull CameraCaptureSession session) {
+
+			}
+
+			@Override
+			public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+
+			}
+		}, new Handler());
 	}
 
 

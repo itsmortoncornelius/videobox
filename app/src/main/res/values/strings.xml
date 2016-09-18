@@ -1,36 +1,40 @@
 <resources>
 	<string name="app_name">Videobox</string>
 
+	<string name="nearby_service_id">AIzaSyDNwx3TupUR3IZnR-4cftr6L-T1estLbHk</string>
+
 	<string name="navigation_drawer_open">Open navigation drawer</string>
 	<string name="navigation_drawer_close">Close navigation drawer</string>
 
 	<string name="action_settings">Settings</string>
+
 	<string name="nav_camera">New Video</string>
 	<string name="nav_gallery">Gallery</string>
 	<string name="nav_settings">Settings</string>
 	<string name="nav_sharing">Sharing</string>
 	<string name="nav_share">Share</string>
 	<string name="nav_send">Send</string>
+
 	<string name="snackbar_fab_action_title">Connect to Camera</string>
 	<string name="snackbar_fab_action">Start</string>
-	<string name="error_nearby_connection_failed">Connection Failed</string>
-	<string name="nearby_service_id">AIzaSyDNwx3TupUR3IZnR-4cftr6L-T1estLbHk</string>
-	<string name="error_nearby_connection">There was an error while connecting to the nearby service. The status code is: </string>
-	<string name="button_connect">Connect</string>
-	<string name="button_abort">No</string>
-	<string name="successfully_connected">successfully connected</string>
-	<string name="connection_request_title">Connection Request</string>
-	<string name="connection_request_content">Do you want to connect to %s?</string>
-	<string name="error_nearby_not_connected_to_wifi">You have to be connected to the network to enable device recognition</string>
-	<string name="remote">Remote</string>
-	<string name="error_no_camera_available">The camera cannot be accessed on this device. You should use this is a remote.</string>
-	<string name="error_no_camera_permission">You didn\'t grant the camera permission. You can only use this device as remote.</string>
-	<string name="camera_chooser_dialog_title">Choose the desired camera</string>
+
+	<string name="title_remote">Remote</string>
+
+	<string name="camera_chooser_dialog_title">Choose your camera.</string>
 	<string name="camera_back">Back Camera</string>
 	<string name="camera_front">Front Camera</string>
 	<string name="camera_external">External Camera</string>
+
+	<string name="error_nearby_connection_failed">Connection Failed</string>
 	<string name="error_nearby_publish">Could not publish message. Status is %s</string>
 	<string name="error_nearby_subscribe">Could not subscribe to message. Status is %s</string>
-
-
+	<string name="error_nearby_not_connected_to_wifi">You have to be connected to the network to enable device recognition</string>
+	<string name="error_permission_camera">You didn\'t grant the camera permission. You can only use this device as remote.</string>
+	<string name="error_camera_not_accessible">The camera is not accessible.</string>
+	<string name="error_camera_disconnected">Connection to camera lost due to another process with hiher priority which requested the same camera.</string>
+	<string name="error_camera_in_use">The camera is currently in use and cannot be opened.</string>
+	<string name="error_camera_max_in_use">The system-wide limit for number of open cameras has been reached and more camera devices cannot be opened.</string>
+	<string name="error_camera_disabled">The camera is disabled and cannot be used.</string>
+	<string name="error_camera_fatal">A fatal error has been encountered while trying to open the camera device. Try again to open the camera.</string>
+	<string name="error_camera_service">A fatal error with the camera service has been encountered. Try to restart your device to solve this issue.</string>
 </resources>

@@ -46,7 +46,7 @@ public class MainActivity extends AbstractNearbyActivity
 				CameraFragment cameraFragment = new CameraFragment();
 				replaceFragment(getSupportFragmentManager(), cameraFragment, FRAGMENT_CONTAINER, TAG_CAMERA_FRAGMENT);
 			} else {
-				showInfo(R.string.error_no_camera_permission);
+				showInfo(R.string.error_permission_camera);
 			}
 		}
 	}
