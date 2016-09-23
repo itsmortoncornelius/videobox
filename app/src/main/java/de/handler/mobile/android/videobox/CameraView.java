@@ -2,44 +2,56 @@ package de.handler.mobile.android.videobox;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.SurfaceHolder;
-import android.view.ViewGroup;
+import android.view.TextureView;
+import android.view.View;
 
 
-class CameraView extends ViewGroup implements SurfaceHolder.Callback {
+class CameraView extends TextureView {
+	private int mRatioWidth = 0;
+	private int mRatioHeight = 0;
+
 	public CameraView(Context context) {
-		super(context);
+		this(context, null);
 	}
 
 	public CameraView(Context context, AttributeSet attrs) {
-		super(context, attrs);
+		this(context, attrs, 0);
 	}
 
-	public CameraView(Context context, AttributeSet attrs, int defStyleAttr) {
-		super(context, attrs, defStyleAttr);
+	public CameraView(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
 	}
 
-	public CameraView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-		super(context, attrs, defStyleAttr, defStyleRes);
+	/**
+	 * Sets the aspect ratio for this view. The size of the view will be measured based on the ratio
+	 * calculated from the parameters. Note that the actual sizes of parameters don't matter, that
+	 * is, calling setAspectRatio(2, 3) and setAspectRatio(4, 6) make the same result.
+	 *
+	 * @param width  Relative horizontal size
+	 * @param height Relative vertical size
+	 */
+	public void setAspectRatio(int width, int height) {
+		if (width < 0 || height < 0) {
+			throw new IllegalArgumentException("Size cannot be negative.");
+		}
+		mRatioWidth = width;
+		mRatioHeight = height;
+		requestLayout();
 	}
 
 	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-
-	}
-
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-
-	}
-
-	@Override
-	protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+		int width = View.MeasureSpec.getSize(widthMeasureSpec);
+		int height = View.MeasureSpec.getSize(heightMeasureSpec);
+		if (0 == mRatioWidth || 0 == mRatioHeight) {
+			setMeasuredDimension(width, height);
+		} else {
+			if (width < height * mRatioWidth / mRatioHeight) {
+				setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+			} else {
+				setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+			}
+		}
 	}
 }
