@@ -300,16 +300,6 @@ public class Camera2VideoFragment extends Fragment
 				}
 				break;
 			}
-			case R.id.info: {
-				Activity activity = getActivity();
-				if (null != activity) {
-					new AlertDialog.Builder(activity)
-							.setMessage(R.string.intro_message)
-							.setPositiveButton(android.R.string.ok, null)
-							.show();
-				}
-				break;
-			}
 		}
 	}
 
@@ -380,7 +370,7 @@ public class Camera2VideoFragment extends Fragment
 		} catch (NullPointerException e) {
 			// Currently an NPE is thrown when the Camera2API is used but not supported on the
 			// device this code runs.
-			ErrorDialog.newInstance(getString(R.string.camera_error))
+			ErrorDialog.newInstance(getString(R.string.error_camera2_support))
 					.show(getChildFragmentManager(), FRAGMENT_DIALOG);
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Interrupted while trying to lock camera opening.");
@@ -565,7 +555,7 @@ public class Camera2VideoFragment extends Fragment
 						@Override
 						public void run() {
 							// UI
-							mButtonVideo.setText(R.string.stop);
+							mButtonVideo.setText(R.string.camera_fragment_stop);
 							mIsRecordingVideo = true;
 
 							// Start recording
@@ -600,7 +590,7 @@ public class Camera2VideoFragment extends Fragment
 	private void stopRecordingVideo() {
 		// UI
 		mIsRecordingVideo = false;
-		mButtonVideo.setText(R.string.record);
+		mButtonVideo.setText(R.string.camera_fragment_record);
 		// Stop recording
 		mMediaRecorder.stop();
 		mMediaRecorder.reset();

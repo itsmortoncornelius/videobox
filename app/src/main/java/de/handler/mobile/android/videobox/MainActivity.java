@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -13,9 +14,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import java.io.File;
-
-import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.REQUEST_CODE_PERMISSION_CAMERA;
 
 public class MainActivity extends AbstractNearbyActivity
@@ -38,11 +36,6 @@ public class MainActivity extends AbstractNearbyActivity
 	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
 		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
 			if (granted) {
-				final File file = CameraFragment.getOutputMediaFile(this, MEDIA_TYPE_VIDEO);
-				if (file == null) {
-					return;
-				}
-
 				CameraFragment cameraFragment = new CameraFragment();
 				replaceFragment(getSupportFragmentManager(), cameraFragment, FRAGMENT_CONTAINER, TAG_CAMERA_FRAGMENT);
 			} else {
@@ -141,12 +134,18 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void startRecording() {
-		//
+		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
+		if (fragment != null) {
+			((CameraFragment) fragment).startRecordingVideo();
+		}
 	}
 
 	@Override
 	protected void stopRecording() {
-		//
+		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
+		if (fragment != null) {
+			((CameraFragment) fragment).stopRecordingVideo();
+		}
 	}
 
 	@Override

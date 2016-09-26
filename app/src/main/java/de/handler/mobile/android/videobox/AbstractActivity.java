@@ -68,7 +68,7 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	}
 
 	protected void showInfo(@StringRes int message, @NonNull View view, @DisplayLength int length) {
-		Snackbar.make(view, message, length).show();
+		this.showInfo(getString(message), view, length);
 	}
 
 	protected void showInfo(@NonNull String message, @NonNull View view, @DisplayLength int length) {

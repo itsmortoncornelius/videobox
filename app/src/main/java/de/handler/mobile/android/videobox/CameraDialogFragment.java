@@ -18,7 +18,7 @@ public class CameraDialogFragment extends DialogFragment {
 	private OnResultListener onResultListener;
 
 	interface OnResultListener {
-		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs) throws CameraAccessException;
+		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs) throws CameraAccessException, InterruptedException;
 	}
 
 	@Override
@@ -46,7 +46,7 @@ public class CameraDialogFragment extends DialogFragment {
 										cameraSpecsList != null ?
 												cameraSpecsList.get(which)
 												: null);
-							} catch (CameraAccessException e) {
+							} catch (CameraAccessException | InterruptedException e) {
 								((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
 							}
 						}

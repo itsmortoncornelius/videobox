@@ -30,6 +30,7 @@
 	<string name="error_nearby_subscribe">Could not subscribe to message. Status is %s</string>
 	<string name="error_nearby_not_connected_to_wifi">You have to be connected to the network to enable device recognition</string>
 	<string name="error_permission_camera">You didn\'t grant the camera permission. You can only use this device as remote.</string>
+	<string name="error_media_recorder_not_accessible">The media recorder cannot be opened but is necessary for starting the video.</string>
 	<string name="error_camera_not_accessible">The camera is not accessible.</string>
 	<string name="error_camera_disconnected">Connection to camera lost due to another process with hiher priority which requested the same camera.</string>
 	<string name="error_camera_in_use">The camera is currently in use and cannot be opened.</string>
@@ -37,4 +38,9 @@
 	<string name="error_camera_disabled">The camera is disabled and cannot be used.</string>
 	<string name="error_camera_fatal">A fatal error has been encountered while trying to open the camera device. Try again to open the camera.</string>
 	<string name="error_camera_service">A fatal error with the camera service has been encountered. Try to restart your device to solve this issue.</string>
+	<string name="error_camera2_support">This device doesn\'t support Camera2 API.</string>
+
+	<string name="camera_fragment_record">Record</string>
+	<string name="camera_fragment_stop">Stop</string>
+	<string name="camera_fragment_description_info">Info</string>
 </resources>
