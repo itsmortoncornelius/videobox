@@ -1,7 +1,6 @@
 package de.handler.mobile.android.videobox;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.hardware.camera2.CameraAccessException;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -16,10 +15,6 @@ public class CameraDialogFragment extends DialogFragment {
 	static final String CAMERAS = "message" + CameraDialogFragment.class.getName();
 
 	private OnResultListener onResultListener;
-
-	interface OnResultListener {
-		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs) throws CameraAccessException, InterruptedException;
-	}
 
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -38,17 +33,15 @@ public class CameraDialogFragment extends DialogFragment {
 
 		return new AlertDialog.Builder(getActivity())
 				.setTitle(title)
-				.setItems(cameraNameArray, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						if (onResultListener != null) {
-							try {
-								onResultListener.onResult(
-										cameraSpecsList != null ?
-												cameraSpecsList.get(which)
-												: null);
-							} catch (CameraAccessException | InterruptedException e) {
-								((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
-							}
+				.setItems(cameraNameArray, (dialog, which) -> {
+					if (onResultListener != null) {
+						try {
+							onResultListener.onResult(
+									cameraSpecsList != null ?
+											cameraSpecsList.get(which) :
+											null);
+						} catch (CameraAccessException | InterruptedException e) {
+							((AbstractActivity) getActivity()).showInfo(R.string.error_camera_not_accessible);
 						}
 					}
 				}).create();
@@ -56,5 +49,9 @@ public class CameraDialogFragment extends DialogFragment {
 
 	public void setOnResultListener(OnResultListener onResultListener) {
 		this.onResultListener = onResultListener;
+	}
+
+	interface OnResultListener {
+		void onResult(@Nullable CameraFragment.CameraSpecs cameraSpecs) throws CameraAccessException, InterruptedException;
 	}
 }

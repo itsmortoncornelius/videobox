@@ -79,14 +79,10 @@ public abstract class AbstractActivity extends AppCompatActivity {
 								   @NonNull final Fragment fragment,
 								   @IdRes final int container,
 								   @Nullable final String tag) {
-		new Handler().post(new Runnable() {
-			@Override
-			public void run() {
+		new Handler().post(() ->
 				fragmentManager.beginTransaction()
 						.replace(container, fragment, tag)
-						.commit();
-			}
-		});
+						.commit());
 	}
 
 	protected void requestPermission(@NonNull @Permission String permission,
@@ -104,7 +100,7 @@ public abstract class AbstractActivity extends AppCompatActivity {
 	}
 
 	protected void requestPermissionz(@NonNull @Permission String[] permissions,
-								   @PermissionRequestCode int permissionRequestCode) {
+									  @PermissionRequestCode int permissionRequestCode) {
 		String[] ungrantedPermissions = new String[permissions.length];
 		int counter = 0;
 		for (String permission : permissions) {

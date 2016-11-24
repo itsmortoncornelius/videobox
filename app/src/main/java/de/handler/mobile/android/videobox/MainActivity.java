@@ -36,7 +36,7 @@ public class MainActivity extends AbstractNearbyActivity
 	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
 		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
 			if (granted) {
-				CameraFragment cameraFragment = new CameraFragment();
+				Camera2VideoFragment cameraFragment = new Camera2VideoFragment();
 				replaceFragment(getSupportFragmentManager(), cameraFragment, FRAGMENT_CONTAINER, TAG_CAMERA_FRAGMENT);
 			} else {
 				showInfo(R.string.error_permission_camera);
@@ -52,18 +52,13 @@ public class MainActivity extends AbstractNearbyActivity
 		Toolbar toolbar = setToolbar(R.id.toolbar);
 
 		View button = findViewById(R.id.fab);
-		button.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				Snackbar.make(view, getString(R.string.snackbar_fab_action_title), Snackbar.LENGTH_LONG)
-						.setAction(getString(R.string.snackbar_fab_action), new View.OnClickListener() {
-							@Override
-							public void onClick(View view) {
-								publish(MessageHelper.CONNECTED);
-							}
-						}).show();
-			}
-		});
+		button.setOnClickListener(buttonView ->
+				Snackbar.make(buttonView,
+						MainActivity.this.getString(R.string.snackbar_fab_action_title),
+						Snackbar.LENGTH_LONG)
+						.setAction(MainActivity.this.getString(R.string.snackbar_fab_action), view ->
+								publish(MessageHelper.CONNECTED))
+						.show());
 
 		mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 		ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -117,18 +112,13 @@ public class MainActivity extends AbstractNearbyActivity
 	protected void showCamera() {
 		findViewById(R.id.fab).setVisibility(View.GONE);
 		requestPermissionz(
-				new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+				new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
 				REQUEST_CODE_PERMISSION_CAMERA);
 	}
 
 	@Override
 	protected void showRemote() {
-		findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				publish(MessageHelper.START_VIDEO);
-			}
-		});
+		findViewById(R.id.fab).setOnClickListener(v -> publish(MessageHelper.START_VIDEO));
 		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, TAG_REMOTE_FRAGMENT);
 	}
 

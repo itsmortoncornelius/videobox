@@ -91,16 +91,58 @@ public class CameraFragment extends Fragment {
 	private CaptureRequest.Builder mPreviewBuilder;
 	// prevent the app from closing before the camera stops
 	private Semaphore mCameraOpenCloseLock = new Semaphore(1);
+	private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
+		@Override
+		public void onOpened(@NonNull CameraDevice cameraDevice) {
+			mCamera = cameraDevice;
+			startPreview(cameraDevice, CameraDevice.TEMPLATE_PREVIEW);
+			mCameraOpenCloseLock.release();
+			if (null != mCameraView) {
+				configureTransform(mCameraView.getWidth(), mCameraView.getHeight());
+			}
+		}
+
+		@Override
+		public void onDisconnected(@NonNull CameraDevice cameraDevice) {
+			mCameraOpenCloseLock.release();
+			cameraDevice.close();
+			mCamera = null;
+		}
+
+		@Override
+		public void onError(@NonNull CameraDevice cameraDevice, int error) {
+			mCameraOpenCloseLock.release();
+			cameraDevice.close();
+			mCamera = null;
+			AbstractActivity activity = (AbstractActivity) getActivity();
+			switch (error) {
+				case ERROR_CAMERA_IN_USE:
+					activity.showInfo(R.string.error_camera_in_use);
+					break;
+				case ERROR_MAX_CAMERAS_IN_USE:
+					activity.showInfo(R.string.error_camera_max_in_use);
+					break;
+				case ERROR_CAMERA_DISABLED:
+					activity.showInfo(R.string.error_camera_disabled);
+					break;
+				case ERROR_CAMERA_DEVICE:
+					activity.showInfo(R.string.error_camera_fatal);
+					break;
+				case ERROR_CAMERA_SERVICE:
+					activity.showInfo(R.string.error_camera_service);
+					break;
+			}
+		}
+	};
 	private int mSurfaceWidth;
 	private int mSurfaceHeight;
 	private boolean mVideoRecording;
 	private boolean mHasMoreCameras = false;
-
 	/**
 	 * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
 	 * {@link TextureView}.
 	 */
-	private TextureView.SurfaceTextureListener mSurfaceTextureListener
+	private final TextureView.SurfaceTextureListener mSurfaceTextureListener
 			= new TextureView.SurfaceTextureListener() {
 		@Override
 		public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture,
@@ -125,7 +167,6 @@ public class CameraFragment extends Fragment {
 		@Override
 		public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {}
 	};
-
 
 	private static File getOutputMediaFile(@NonNull final Context context, final int type) {
 		// To be safe, you should check that the SDCard is mounted
@@ -474,7 +515,7 @@ public class CameraFragment extends Fragment {
 			assert texture != null;
 			texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
 
-			mPreviewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+			mPreviewBuilder = camera.createCaptureRequest(type);
 			List<Surface> surfaces = new ArrayList<>();
 
 			// Set up Surface for the camera preview
@@ -560,6 +601,17 @@ public class CameraFragment extends Fragment {
 
 
 	class CameraSpecs implements Parcelable {
+		public final Parcelable.Creator<CameraSpecs> CREATOR = new Parcelable.Creator<CameraSpecs>() {
+			@Override
+			public CameraSpecs createFromParcel(Parcel source) {
+				return new CameraSpecs(source);
+			}
+
+			@Override
+			public CameraSpecs[] newArray(int size) {
+				return new CameraSpecs[size];
+			}
+		};
 		final String cameraId;
 		final String name;
 		final int facing;
@@ -568,6 +620,12 @@ public class CameraFragment extends Fragment {
 			this.cameraId = cameraId;
 			this.facing = facing;
 			this.name = name;
+		}
+
+		CameraSpecs(Parcel in) {
+			this.cameraId = in.readString();
+			this.name = in.readString();
+			this.facing = in.readInt();
 		}
 
 		@Override
@@ -581,23 +639,5 @@ public class CameraFragment extends Fragment {
 			dest.writeString(this.name);
 			dest.writeInt(this.facing);
 		}
-
-		CameraSpecs(Parcel in) {
-			this.cameraId = in.readString();
-			this.name = in.readString();
-			this.facing = in.readInt();
-		}
-
-		public final Parcelable.Creator<CameraSpecs> CREATOR = new Parcelable.Creator<CameraSpecs>() {
-			@Override
-			public CameraSpecs createFromParcel(Parcel source) {
-				return new CameraSpecs(source);
-			}
-
-			@Override
-			public CameraSpecs[] newArray(int size) {
-				return new CameraSpecs[size];
-			}
-		};
 	}
 }

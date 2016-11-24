@@ -10,8 +10,6 @@ import android.view.WindowManager;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.messages.Message;
 import com.google.android.gms.nearby.messages.MessageListener;
@@ -30,7 +28,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private static final int TIMEOUT_PUBLISH = 3 * 60;
 	private static final Strategy PUB_SUB_STRATEGY =
 			new Strategy.Builder().setTtlSeconds(TIMEOUT_PUBLISH).build();
-
+	protected GoogleApiClient mGoogleApiClient;
+	protected Message mMessage;
 	private final MessageListener mMessageListener = new MessageListener() {
 		@Override
 		public void onFound(final Message message) {
@@ -43,10 +42,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			// Currently not important;
 		}
 	};
-
-	protected GoogleApiClient mGoogleApiClient;
-	protected Message mMessage;
-
 
 	protected abstract void onNearbyConnected();
 
@@ -147,13 +142,10 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				}).build();
 
 		Nearby.Messages.subscribe(mGoogleApiClient, mMessageListener, options)
-				.setResultCallback(new ResultCallback<Status>() {
-					@Override
-					public void onResult(@NonNull Status status) {
-						if (!status.isSuccess()) {
-							showInfo(getString(R.string.error_nearby_publish,
-									NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
-						}
+				.setResultCallback(status -> {
+					if (!status.isSuccess()) {
+						showInfo(getString(R.string.error_nearby_publish,
+								NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
 					}
 				});
 	}
@@ -172,13 +164,10 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		mMessage = new Message(toByte);
 
 		Nearby.Messages.publish(mGoogleApiClient, mMessage, options)
-				.setResultCallback(new ResultCallback<Status>() {
-					@Override
-					public void onResult(@NonNull Status status) {
-						if (!status.isSuccess()) {
-							showInfo(getString(R.string.error_nearby_subscribe,
-									NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
-						}
+				.setResultCallback(status -> {
+					if (!status.isSuccess()) {
+						showInfo(getString(R.string.error_nearby_subscribe,
+								NearbyMessagesStatusCodes.getStatusCodeString(status.getStatusCode())));
 					}
 				});
 	}
