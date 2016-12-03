@@ -4,8 +4,7 @@ final class MessageHelper {
 	static final int SHOW_CAMERA = 0;
 	static final int SHOW_REMOTE = 1;
 	static final int CONNECTED = 2;
-	static final int START_VIDEO = 3;
-	static final int STOP_VIDEO = 4;
+	static final int TOGGLE_CAMERA = 3;
 
 	private MessageHelper() {
 		// prevent instantiation

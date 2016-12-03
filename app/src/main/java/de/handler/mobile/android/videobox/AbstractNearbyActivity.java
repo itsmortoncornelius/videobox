@@ -49,9 +49,7 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 
 	protected abstract void showRemote();
 
-	protected abstract void startRecording();
-
-	protected abstract void stopRecording();
+	protected abstract void toggleCamera();
 
 
 	@Override
@@ -71,9 +69,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	protected void onStop() {
 		super.onStop();
 		if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-			mGoogleApiClient.disconnect();
 			unpublish();
 			unsubscribe();
+			mGoogleApiClient.disconnect();
 		}
 	}
 
@@ -177,7 +175,9 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 	private void unpublish() {
-		Nearby.Messages.unpublish(mGoogleApiClient, mMessage);
+		if (mMessage != null) {
+			Nearby.Messages.unpublish(mGoogleApiClient, mMessage);
+		}
 	}
 
 	private void handleMessage(int message) {
@@ -193,11 +193,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				showRemote();
 				this.publish(MessageHelper.SHOW_CAMERA);
 				break;
-			case MessageHelper.START_VIDEO:
-				startRecording();
-				break;
-			case MessageHelper.STOP_VIDEO:
-				stopRecording();
+			case MessageHelper.TOGGLE_CAMERA:
+				toggleCamera();
 				break;
 			default:
 		}

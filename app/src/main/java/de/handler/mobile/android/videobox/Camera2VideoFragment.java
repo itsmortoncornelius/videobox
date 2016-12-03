@@ -18,6 +18,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -32,6 +33,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -453,8 +455,8 @@ public class Camera2VideoFragment extends Fragment {
 		}
 		mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
 		mMediaRecorder.setVideoEncodingBitRate(10000000);
-		mMediaRecorder.setVideoFrameRate(30);
 		mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+		mMediaRecorder.setVideoFrameRate(30);
 		mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 		int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -466,12 +468,22 @@ public class Camera2VideoFragment extends Fragment {
 				mMediaRecorder.setOrientationHint(INVERSE_ORIENTATIONS.get(rotation));
 				break;
 		}
-		mMediaRecorder.prepare();
 	}
 
 	private String getVideoFilePath(Context context) {
-		return context.getExternalFilesDir(null).getAbsolutePath() + "/"
-				+ System.currentTimeMillis() + ".mp4";
+		File moviesDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+		if (moviesDir == null) {
+			return  null;
+		}
+		return moviesDir.getAbsolutePath() + "/" + System.currentTimeMillis() + ".mp4";
+	}
+
+	void toogleCamera() {
+		if (mIsRecordingVideo) {
+			stopRecordingVideo();
+		} else {
+			startRecordingVideo();
+		}
 	}
 
 	private void startRecordingVideo() {
@@ -493,6 +505,7 @@ public class Camera2VideoFragment extends Fragment {
 			mPreviewBuilder.addTarget(previewSurface);
 
 			// Set up Surface for the MediaRecorder
+			mMediaRecorder.prepare();
 			Surface recorderSurface = mMediaRecorder.getSurface();
 			surfaces.add(recorderSurface);
 			mPreviewBuilder.addTarget(recorderSurface);
@@ -505,11 +518,10 @@ public class Camera2VideoFragment extends Fragment {
 					mPreviewSession = cameraCaptureSession;
 					updatePreview();
 					getActivity().runOnUiThread(() -> {
-						// UI
-						mIsRecordingVideo = true;
-
 						// Start recording
 						mMediaRecorder.start();
+						// UI
+						mIsRecordingVideo = true;
 					});
 				}
 

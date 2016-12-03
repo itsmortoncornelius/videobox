@@ -118,23 +118,15 @@ public class MainActivity extends AbstractNearbyActivity
 
 	@Override
 	protected void showRemote() {
-		findViewById(R.id.fab).setOnClickListener(v -> publish(MessageHelper.START_VIDEO));
+		findViewById(R.id.fab).setOnClickListener(v -> publish(MessageHelper.TOGGLE_CAMERA));
 		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, TAG_REMOTE_FRAGMENT);
 	}
 
 	@Override
-	protected void startRecording() {
+	protected void toggleCamera() {
 		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
 		if (fragment != null) {
-			((CameraFragment) fragment).startRecordingVideo();
-		}
-	}
-
-	@Override
-	protected void stopRecording() {
-		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
-		if (fragment != null) {
-			((CameraFragment) fragment).stopRecordingVideo();
+			((Camera2VideoFragment) fragment).toogleCamera();
 		}
 	}
 
