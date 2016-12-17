@@ -63,53 +63,20 @@ public class Camera2VideoFragment extends Fragment {
 		INVERSE_ORIENTATIONS.append(Surface.ROTATION_270, 0);
 	}
 
-	/**
-	 * An {@link CameraView} for camera preview.
-	 */
 	private CameraView mCameraView;
-	/**
-	 * A reference to the opened {@link android.hardware.camera2.CameraDevice}.
-	 */
 	private CameraDevice mCameraDevice;
-	/**
-	 * A reference to the current {@link android.hardware.camera2.CameraCaptureSession} for
-	 * preview.
-	 */
 	private CameraCaptureSession mPreviewSession;
-	/**
-	 * The {@link android.util.Size} of camera preview.
-	 */
 	private Size mPreviewSize;
-	/**
-	 * The {@link android.util.Size} of video recording.
-	 */
 	private Size mVideoSize;
-	/**
-	 * MediaRecorder
-	 */
 	private MediaRecorder mMediaRecorder;
-	/**
-	 * Whether the app is recording video now
-	 */
 	private boolean mIsRecordingVideo;
-	/**
-	 * An additional thread for running tasks that shouldn't block the UI.
-	 */
 	private HandlerThread mBackgroundThread;
-	/**
-	 * A {@link Handler} for running tasks in the background.
-	 */
 	private Handler mBackgroundHandler;
-	/**
-	 * A {@link Semaphore} to prevent the app from exiting before closing the camera.
-	 */
 	private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 	private Integer mSensorOrientation;
 	private String mNextVideoAbsolutePath;
 	private CaptureRequest.Builder mPreviewBuilder;
-	/**
-	 * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its status.
-	 */
+
 	private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 		@Override
 		public void onOpened(@NonNull CameraDevice cameraDevice) {

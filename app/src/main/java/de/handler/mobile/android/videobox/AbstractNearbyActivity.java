@@ -20,6 +20,7 @@ import com.google.android.gms.nearby.messages.Strategy;
 import com.google.android.gms.nearby.messages.SubscribeCallback;
 import com.google.android.gms.nearby.messages.SubscribeOptions;
 
+// TODO Extract connection logic to a manager class and implement interface here to be able to also use other technologies
 public abstract class AbstractNearbyActivity extends AbstractActivity implements
 		GoogleApiClient.ConnectionCallbacks,
 		GoogleApiClient.OnConnectionFailedListener {
@@ -28,8 +29,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	private static final int TIMEOUT_PUBLISH = 3 * 60;
 	private static final Strategy PUB_SUB_STRATEGY =
 			new Strategy.Builder().setTtlSeconds(TIMEOUT_PUBLISH).build();
-	protected GoogleApiClient mGoogleApiClient;
-	protected Message mMessage;
 	private final MessageListener mMessageListener = new MessageListener() {
 		@Override
 		public void onFound(final Message message) {
@@ -42,6 +41,8 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 			// Currently not important;
 		}
 	};
+	protected GoogleApiClient mGoogleApiClient;
+	protected Message mMessage;
 
 	protected abstract void onNearbyConnected();
 
