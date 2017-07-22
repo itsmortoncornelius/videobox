@@ -122,13 +122,6 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 	}
 
 
-	private void initNearbyServices() {
-		mGoogleApiClient = new GoogleApiClient.Builder(this)
-				.addApi(Nearby.MESSAGES_API)
-				.addConnectionCallbacks(this)
-				.enableAutoManage(this, this)
-				.build();
-	}
 
 	protected void subscribe() {
 		SubscribeOptions options = new SubscribeOptions.Builder()
@@ -171,14 +164,22 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				});
 	}
 
-	private void unsubscribe() {
+	protected void unsubscribe() {
 		Nearby.Messages.unsubscribe(mGoogleApiClient, mMessageListener);
 	}
 
-	private void unpublish() {
+	protected void unpublish() {
 		if (mMessage != null) {
 			Nearby.Messages.unpublish(mGoogleApiClient, mMessage);
 		}
+	}
+
+	private void initNearbyServices() {
+		mGoogleApiClient = new GoogleApiClient.Builder(this)
+				.addApi(Nearby.MESSAGES_API)
+				.addConnectionCallbacks(this)
+				.enableAutoManage(this, this)
+				.build();
 	}
 
 	private void handleMessage(int message) {
@@ -187,12 +188,12 @@ public abstract class AbstractNearbyActivity extends AbstractActivity implements
 				showInfo("Devices successfully paired");
 				this.publish(MessageHelper.SHOW_REMOTE);
 				break;
-			case MessageHelper.SHOW_CAMERA:
-				showCamera();
-				break;
 			case MessageHelper.SHOW_REMOTE:
 				showRemote();
 				this.publish(MessageHelper.SHOW_CAMERA);
+				break;
+			case MessageHelper.SHOW_CAMERA:
+				showCamera();
 				break;
 			case MessageHelper.TOGGLE_CAMERA:
 				toggleCamera();

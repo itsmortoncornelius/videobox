@@ -1,34 +1,37 @@
 package de.handler.mobile.android.videobox;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+
+import com.github.florent37.camerafragment.CameraFragment;
+import com.github.florent37.camerafragment.configuration.Configuration;
+import com.github.florent37.camerafragment.listeners.CameraFragmentResultListener;
 
 import static de.handler.mobile.android.videobox.PermissionRequestCode.RequestCodes.REQUEST_CODE_PERMISSION_CAMERA;
 
-public class MainActivity extends AbstractNearbyActivity
-		implements NavigationView.OnNavigationItemSelectedListener {
-
+public class MainActivity extends AbstractNearbyActivity {
 	private static final int FRAGMENT_CONTAINER = R.id.main_container;
 	private static final String TAG_CAMERA_FRAGMENT = "camera_fragment" + MainActivity.class.getCanonicalName();
-	private static final String TAG_REMOTE_FRAGMENT = "remote_fragment" + MainActivity.class.getCanonicalName();
-
-	private DrawerLayout mDrawer;
+	private static final String TAG_WELCOME_FRAGMENT = "welcome_fragment" + MainActivity.class.getCanonicalName();
+	private static final String FILE_NAME = "videobox";
+	private int counter = 0;
+	private ImageButton toggleButton;
+	private ProgressBar progressBar;
+	private Drawable drawablePlay;
+	private Drawable drawableStop;
 
 
 	@Override
 	protected void setRootView() {
-		mRootView = findViewById(R.id.fab);
+		mRootView = findViewById(FRAGMENT_CONTAINER);
 		mRootViewId = FRAGMENT_CONTAINER;
 	}
 
@@ -36,8 +39,13 @@ public class MainActivity extends AbstractNearbyActivity
 	protected void onPermissionGranted(int requestCodePermission, boolean granted) {
 		if (requestCodePermission == REQUEST_CODE_PERMISSION_CAMERA) {
 			if (granted) {
-				Camera2VideoFragment cameraFragment = new Camera2VideoFragment();
-				replaceFragment(getSupportFragmentManager(), cameraFragment, FRAGMENT_CONTAINER, TAG_CAMERA_FRAGMENT);
+				@SuppressLint("MissingPermission")
+				CameraFragment cameraFragment = CameraFragment.newInstance(
+						new Configuration.Builder()
+								.setFlashMode(Configuration.FLASH_MODE_OFF)
+								.setMediaAction(Configuration.MEDIA_ACTION_VIDEO)
+								.build());
+				replaceFragment(getSupportFragmentManager(), cameraFragment, FRAGMENT_CONTAINER, TAG_CAMERA_FRAGMENT, true);
 			} else {
 				showInfo(R.string.error_permission_camera);
 			}
@@ -50,57 +58,29 @@ public class MainActivity extends AbstractNearbyActivity
 		setContentView(R.layout.activity_main);
 
 		Toolbar toolbar = setToolbar(R.id.toolbar);
+		setSupportActionBar(toolbar);
 
-		View button = findViewById(R.id.fab);
-		button.setOnClickListener(buttonView ->
-				Snackbar.make(buttonView,
-						MainActivity.this.getString(R.string.snackbar_fab_action_title),
-						Snackbar.LENGTH_LONG)
-						.setAction(MainActivity.this.getString(R.string.snackbar_fab_action), view ->
-								publish(MessageHelper.CONNECTED))
-						.show());
+		drawablePlay = getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp, getTheme());
+		drawableStop = getResources().getDrawable(R.drawable.ic_stop_white_24dp, getTheme());
 
-		mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-		ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-				this, mDrawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-		mDrawer.addDrawerListener(toggle);
-		toggle.syncState();
+		progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+		toggleButton = (ImageButton) findViewById(R.id.toggle_button);
+		toggleButton.setOnClickListener(v -> {
+			progressBar.setVisibility(View.VISIBLE);
+			publish(MessageHelper.CONNECTED);
+		});
 
-		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-		navigationView.setNavigationItemSelectedListener(this);
-
-		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), FRAGMENT_CONTAINER, null);
+		replaceFragment(getSupportFragmentManager(), new WelcomeFragment(), FRAGMENT_CONTAINER, TAG_WELCOME_FRAGMENT, false);
 	}
 
 	@Override
 	public void onBackPressed() {
-		if (mDrawer.isDrawerOpen(GravityCompat.START)) {
-			mDrawer.closeDrawer(GravityCompat.START);
-		} else {
-			super.onBackPressed();
+		unpublish();
+		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
+		if (fragment instanceof CameraFragment) {
+			toggleButton.setVisibility(View.VISIBLE);
 		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
-		}
-
-		return super.onOptionsItemSelected(item);
+		super.onBackPressed();
 	}
 
 	@Override
@@ -109,45 +89,42 @@ public class MainActivity extends AbstractNearbyActivity
 	}
 
 	@Override
+	protected void showRemote() {
+		toggleButton.setOnClickListener(v -> {
+			publish(MessageHelper.TOGGLE_CAMERA);
+			progressBar.setVisibility(View.VISIBLE);
+		});
+		progressBar.setVisibility(View.GONE);
+	}
+
+	@Override
 	protected void showCamera() {
-		findViewById(R.id.fab).setVisibility(View.GONE);
+		findViewById(R.id.toggle_button).setVisibility(View.GONE);
 		requestPermissionz(
 				new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
 				REQUEST_CODE_PERMISSION_CAMERA);
 	}
 
 	@Override
-	protected void showRemote() {
-		findViewById(R.id.fab).setOnClickListener(v -> publish(MessageHelper.TOGGLE_CAMERA));
-		replaceFragment(getSupportFragmentManager(), new RemoteFragment(), R.id.main_container, TAG_REMOTE_FRAGMENT);
-	}
-
-	@Override
 	protected void toggleCamera() {
+		progressBar.setVisibility(View.GONE);
+		toggleButton.setImageDrawable(drawableStop);
 		Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_CAMERA_FRAGMENT);
-		if (fragment != null) {
-			((Camera2VideoFragment) fragment).toogleCamera();
+		if (fragment instanceof CameraFragment) {
+			((CameraFragment) fragment).takePhotoOrCaptureVideo(
+					new CameraFragmentResultListener() {
+						@Override
+						public void onVideoRecorded(String filePath) {
+							showInfo(R.string.message_video_successfully_recorded);
+							counter += counter;
+							toggleButton.setImageDrawable(drawablePlay);
+						}
+
+						@Override
+						public void onPhotoTaken(byte[] bytes, String filePath) {
+							// not implemented here
+						}
+					}, Environment.DIRECTORY_MOVIES, FILE_NAME + "_" + counter);
 		}
-	}
-
-	@Override
-	public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-		// Handle navigation view item clicks here.
-		int id = item.getItemId();
-
-		if (id == R.id.nav_camera) {
-			// Handle the camera action
-		} else if (id == R.id.nav_gallery) {
-
-		} else if (id == R.id.nav_manage) {
-
-		} else if (id == R.id.nav_share) {
-
-		} else if (id == R.id.nav_send) {
-
-		}
-
-		mDrawer.closeDrawer(GravityCompat.START);
-		return true;
 	}
 }

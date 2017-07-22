@@ -43,4 +43,6 @@
 	<string name="camera_fragment_record">Record</string>
 	<string name="camera_fragment_stop">Stop</string>
 	<string name="camera_fragment_description_info">Info</string>
+
+	<string name="message_video_successfully_recorded">Your video has been successfully recorded.</string>
 </resources>

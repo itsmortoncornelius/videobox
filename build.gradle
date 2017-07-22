@@ -3,14 +3,14 @@ buildscript {
 		jcenter()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:2.2.3'
+		classpath 'com.android.tools.build:gradle:3.0.0-alpha7'
 		classpath 'com.github.ben-manes:gradle-versions-plugin:0.13.0'
 	}
 }
 
 ext {
-	supportLibraryVersion = '25.0.1'
-	playServicesVersion = '10.0.1'
+	supportLibraryVersion = '25.3.0'
+	playServicesVersion = '11.0.2'
 }
 
 allprojects {
